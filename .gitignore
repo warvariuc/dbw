@@ -1,0 +1,10 @@
+# hidden files
+.*
+
+# sqlite databases
+#*.sqlite
+
+# compiled python scripts
+*.pyc
+*.pyo
+__pycache__
