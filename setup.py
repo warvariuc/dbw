@@ -42,6 +42,5 @@ setuptools.setup(name='dbw',
     ),
     install_requires=(
         'nose',
-        'coverage',
     ),
 )
