@@ -1,3 +1,7 @@
+
+License
+=======
+
 Copyright (c) 2013 Victor Varvariuc <victor.varvariuc@gmail.com>.
 All rights reserved.
 
