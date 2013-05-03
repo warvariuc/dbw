@@ -15,10 +15,10 @@ class PostgresqlAdapterTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        db_url = os.environ.get('POSTGRESQL_TEST_DB_URL')
+        db_url = os.environ.get('POSTGRESQL_TEST_DB')
         if not db_url:
             raise unittest.SkipTest('No URL of test db is defined.')
-        cls.db = dbw.connect(db_url)
+        cls.db = dbw.connect('postgresql://' + db_url)
 
         # Drops all tables from the test database
         cls.db.execute("""

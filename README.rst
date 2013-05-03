@@ -4,7 +4,9 @@ and a DAL.
 ``DBW`` was created as part of another project of mine which needed an ORM, but i didn't like existing
 solutions.
 
-It is a ``DAL`` (Database Abstraction Layer) **and** an ``ORM`` (Object-Relational Mapper).
+It is a ``DAL`` (Database Abstraction Layer) **and** an ``ORM`` (Object-Relational Mapper) for
+**Python 3**.
+
 The design is driven by the idea to have Python IDE autocomplete (static analysis) work.
 Also humans studying the code should not scratch their heads trying to understand from where an
 attribute has appeared in an object.

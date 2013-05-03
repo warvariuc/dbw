@@ -14,7 +14,7 @@ class SqliteAdapterTest(test_postgres_adapter.PostgresqlAdapterTest):
 
     @classmethod
     def setUpClass(cls):
-        db_path = os.environ.get('SQLITE_TEST_DB_PATH')
+        db_path = os.environ.get('SQLITE_TEST_DB')
         if not db_path:
             raise unittest.SkipTest('No path of test db file is defined.')
         with open(db_path, 'w'):
