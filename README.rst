@@ -1,3 +1,7 @@
+===
+DBW
+===
+
 ``DBW`` stands for 'DataBase Wrapper'. I could not find a better name, especially as it's both an ORM
 and a DAL.
 
@@ -12,7 +16,11 @@ Also humans studying the code should not scratch their heads trying to understan
 attribute has appeared in an object.
 Django ORM has **too** much magic - you have too look into docs to know all the params.
 
-::
+-------------
+Some examples
+-------------
+
+We have a model::
 
     class Book(Model):
         price = DecimalField(max_digits=10, decimal_places=2, default='0.00')
@@ -52,4 +60,7 @@ city -> cities ?
 The code is in Beta state. It needs extensive testing. It is not thread-safe. It does not have caching yet.
 
 I decided to release the code in its current state after watching "'Good Enough' is good enough!" by
-Alex Martelli at PyCon 2013: Launch early, launch often!
+Alex Martelli at PyCon 2013:
+
+.. epigraph::
+    Launch early, launch often!
