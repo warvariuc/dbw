@@ -3,8 +3,8 @@
 version = '0.1.0'
 shortdesc = 'DataBase Wrapper: DAL + ORM'
 longdesc = open('README.rst').read()
-longdesc += open('CHANGES.rst').read()
-longdesc += open('LICENSE.rst').read()
+longdesc += '\n\n' + open('CHANGES.rst').read()
+longdesc += '\n\n' + open('LICENSE.rst').read()
 
 
 import sys
