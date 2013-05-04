@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-version = '0.1.0'
-shortdesc = 'DataBase Wrapper: DAL + ORM'
-longdesc = open('README.rst').read()
-longdesc += '\n\n' + open('CHANGES.rst').read()
-longdesc += '\n\n' + open('LICENSE.rst').read()
-
-
 import sys
 
 
@@ -16,12 +9,21 @@ if sys.version < PYTHON_REQUIRED_VERSION:
              % (PYTHON_REQUIRED_VERSION, sys.version))
 
 
+import re
+import os
 import setuptools
+
+longdesc = open('README.rst').read()
+longdesc += '\n\n' + open('CHANGES.rst').read()
+longdesc += '\n\n' + open('LICENSE.rst').read()
+
+v_file = open(os.path.join(os.path.dirname(__file__), 'dbw', '__init__.py')).read()
+version = re.search(r"^__version__ = '(.*?)'$", v_file, re.MULTILINE).group(1)
 
 
 setuptools.setup(name='dbw',
     version=version,
-    description=shortdesc,
+    description='DataBase Wrapper: DAL + ORM',
     long_description=longdesc,
     keywords='DAL Database Abstraction Layer ORM Object Relational Manager wrapper',
     author='Victor Varvariuc',

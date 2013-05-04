@@ -1,4 +1,5 @@
 __author__ = "Victor Varvariuc <victor.varvariuc@gmail.com>"
+__version__ = '0.1.1'
 
 import sys
 

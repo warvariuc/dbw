@@ -102,7 +102,6 @@ class Expression():
         try:
             return operation(*args)  # execute the operation
         except:
-            import ipdb; from pprint import pprint; ipdb.set_trace()
             return operation(*args)  # execute the operation
         
 
