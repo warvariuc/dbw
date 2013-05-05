@@ -1,5 +1,5 @@
-__author__ = "Victor Varvariuc <victor.varvariuc@gmail.com>"
 __version__ = '0.1.1'
+__author__ = "Victor Varvariuc <victor.varvariuc@gmail.com>"
 
 import sys
 
@@ -57,11 +57,11 @@ LOG_SETTINGS = {
     },
     'loggers': {
         'dbw': {
-            'level':'ERROR',
+            'level': 'ERROR',
             'handlers': ['console']
         },
         'dbw.sql': {
-            'level':'ERROR',
+            'level': 'ERROR',
             'handlers': ['console']
         },
     }
@@ -116,8 +116,8 @@ def listify(obj):
 
 
 class LazyProperty():
-    """The descriptor is designed to be used as a decorator, and will save the decorated function
-    and its name. http://blog.pythonisito.com/2008/08/lazy-descriptors.html
+    """Descriptor to be used as a decorator, which saves the decorated function and its name.
+    http://blog.pythonisito.com/2008/08/lazy-descriptors.html
     """
     def __init__(self, func):
         self._func = func
@@ -137,7 +137,7 @@ class LazyProperty():
             return self  # when the descriptor is accessed as a class attribute
 
 
-# Custom None
+# Custom None for non-passed function parameters. Needed because None is already used as NULL
 Nil = object()
 
 
@@ -160,7 +160,10 @@ def connect(url):
         if isinstance(AdapterClass, type) and issubclass(AdapterClass, GenericAdapter):
             url_start = AdapterClass.protocol + '://'
             if url.startswith(url_start):
-                db_adapter = AdapterClass(url[len(url_start):])
-                assert isinstance(db_adapter, GenericAdapter)
-                return db_adapter
-    raise AdapterNotFound('Could not find a suitable adapter for the URL `%s`' % url)
+                break
+    else:
+        raise AdapterNotFound('Could not find a suitable db adapter for the URL `%s`' % url)
+
+    db_adapter = AdapterClass(url[len(url_start):])
+    assert isinstance(db_adapter, GenericAdapter)
+    return db_adapter
