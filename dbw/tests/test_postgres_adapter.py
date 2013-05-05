@@ -8,7 +8,7 @@ from decimal import Decimal
 import dbw
 
 
-dbw.sql_logger.setLevel(dbw.logging.DEBUG)
+# dbw.sql_logger.setLevel(dbw.logging.DEBUG)
 
 
 class PostgresqlAdapterTest(unittest.TestCase):

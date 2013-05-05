@@ -118,6 +118,10 @@ class Expression():
         """Get non-empty COUNT expression."""
         return Expression('_COUNT', self, distinct=distinct)
 
+    def concat(self, *expressions):
+        """Concatenate this expressions with other expressions."""
+        return concat(self, *expressions)
+
 
 class FieldExpression(Expression):
     """Expression which holds a single field.
@@ -314,8 +318,9 @@ class DateTimeField(ModelField):
         if isinstance(value, str):
             value = DateTime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
         elif not isinstance(value, DateTime) and value is not None:
-            raise exceptions.RecordValueError('Provide a datetime.datetime or a string in format '
-                                              '"%Y-%m-%d %H:%M:%S.%f" with valid date-time.')
+            raise exceptions.RecordValueError(
+                'Provide a datetime.datetime or a string in format "%Y-%m-%d %H:%M:%S.%f" with '
+                'a valid date-time. Got a `{}`.'.format(value.__class__.__name__))
         record.__dict__[self.name] = value
 
 

@@ -525,8 +525,8 @@ class GenericAdapter():
         self.execute(sql)
         return self.cursor.rowcount
 
-    def _select(self, *fields, from_=None, where=None, orderby=False, limit=False,
-                distinct=False, groupby=False, having=''):
+    def _select(self, *fields, from_='', where='', orderby='', limit=None,
+                distinct='', groupby='', having=''):
         """SELECT [ DISTINCT ] column_expression1, column_expression2, ...
           [ FROM from_clause ]
           [ JOIN table_name ON (join_condition) ]
@@ -650,9 +650,10 @@ class GenericAdapter():
         sql_other += self._LIMIT(limit)
         sql = 'SELECT %s %s FROM %s%s%s' % (sql_select, sql_fields, sql_from, sql_where, sql_other)
 
-        return fields, sql
+        return Rows(self, sql, fields)
 
-    def select(self, *fields, from_=None, where=None, **attributes):
+    def select(self, *fields, from_='', where='', orderby='', limit=None,
+               distinct='', groupby='', having=''):
         """Create and return SELECT query.
         @param fields: tables, fields or joins;
         @param from_: tables and joined tables to select from.
@@ -661,62 +662,64 @@ class GenericAdapter():
             A list of models or strings
         @param where: expression for where;
         @param limit: an integer (LIMIT) or tuple/list of two elements (OFFSET, LIMIT)
-        @param orderby:
-        @param groupby:
+        @param orderby: list of expressions to sort by
+        @param groupby: list of expressions to group by
+        @param having: list of condition expressions to apply within group by
         tables are taken from fields and `where` expression;
         """
-        fields, query = self._select(*fields, from_=from_, where=where, **attributes)
-        self.execute(query)
-        rows = list(self.cursor.fetchall())
-        return self._parse_response(fields, rows)
-
-    def _parse_response(self, fields, rows):
-        """Post process results fetched from the DB. Decode values to model fields representation.
-        Return results in Rows object.
-        """
-        for i, row in enumerate(rows):
-            new_row = []
-            for j, field in enumerate(fields):
-                value = row[j]
-                if value is not None and isinstance(field, dbw.FieldExpression):
-                    column = field.left.column
-                    if isinstance(column, dbw.Column):
-                        decode_func = getattr(self, '_decode_' + column.type.upper(), None)
-                        if decode_func:
-                            value = decode_func(value, column)
-                new_row.append(value)
-            rows[i] = new_row
-
-        return Rows(self, fields, rows)
+        rows = self._select(*fields, from_=from_, where=where, orderby=orderby,
+                             limit=limit, distinct=distinct, groupby=groupby, having=having)
+        assert isinstance(rows, Rows)
+        rows._execute()
+        return rows
 
 
 ####################################################################################################
 
 class Rows():
-    """Keeps results of a SELECT and provides methods for convenient access.
+    """The object keeps results of a SELECT and provides methods for convenient access.
     """
-    def __init__(self, db, fields, rows):
+    def __init__(self, db, query, fields):
         """
+        @param db: adapter thrught which the query was made
+        @param query: the SELECT sql query performed
         @param fields: list of queried fields
-        @param rows: list of tuples with query result
         """
         self.db = db
+        self.query = query
         self.fields = tuple(fields)
-        self.rows = rows
         self._fields_str = tuple(str(field) for field in fields)
         # {field_str: field_order}
         self._fields_order = dict((field_str, i) for i, field_str in enumerate(self._fields_str))
+
+    def _execute(self):
+        """Execute the SELECT query and process results fetched from the DB.
+        Decode values to model fields representation.
+        """
+        self.db.execute(self.query)
+        rows = list(self.db.cursor.fetchall())
+
+        for i, row in enumerate(rows):
+            new_row = []
+            for j, field in enumerate(self.fields):
+                value = row[j]
+                if value is not None and isinstance(field, dbw.FieldExpression):
+                    column = field.left.column
+                    if isinstance(column, dbw.Column):
+                        decode_func = getattr(self.db, '_decode_' + column.type.upper(), None)
+                        if decode_func:
+                            value = decode_func(value, column)
+                new_row.append(value)
+            rows[i] = new_row
+        self.rows = rows
 
     def value(self, row_no, field):
         """Get a value.
         @param rowNo: row number
         @param field: field instance or column number
         """
-        if isinstance(field, int):
-            column_no = field
-        else:
-            column_no = self._fields_order[str(field)]
-        return self.rows[row_no][column_no]
+        field_no = field if isinstance(field, int) else self._fields_order[str(field)]
+        return self.rows[row_no][field_no]
 
     def __len__(self):
         return len(self.rows)

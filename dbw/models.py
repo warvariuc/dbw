@@ -229,10 +229,7 @@ class Model(metaclass=ModelBase):
             if field_value is Nil:
                 field_value = field.default
 
-            try:
-                setattr(self, field_name, field_value)
-            except exceptions.RecordValueError as exc:
-                raise exceptions.RecordValueError(str(exc))
+            setattr(self, field_name, field_value)
 
         if kwargs:
             raise exceptions.ModelError('Got unknown field names: %s' % ', '.join(kwargs))
