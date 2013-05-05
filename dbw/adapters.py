@@ -52,14 +52,15 @@ class Column():
 class GenericAdapter():
     """ A generic database adapter.
     """
-    protocol = 'generic'
+    scheme = 'generic'
     driver = None
     # from this date number of days will be counted when storing DATE values in the DB
     epoch = Date(1970, 1, 1)
     _MAX_QUERIES = 20  # how many queries to keep in log
 
     def __init__(self, url='', connect=True, autocommit=True):
-        """URL is already without protocol.
+        """
+        @param url: database location without scheme
         """
         self.url = url
         logger.debug('Creating adapter for `%s`' % self)
@@ -73,7 +74,7 @@ class GenericAdapter():
         self.autocommit = autocommit
 
     def __str__(self):
-        return "'%s://%s'" % (self.protocol, self.url)
+        return "'%s://%s'" % (self.scheme, self.url)
 
     def connect(self):
         """Connect to the DB and return the connection. To be overridden in subclasses.
@@ -81,7 +82,10 @@ class GenericAdapter():
         return None  # DB connection
 
     def disconnect(self):
-        return self.connection.close()
+        connection = self.connection
+        self.connection = None
+        self.cursor = None
+        return connection.close()
 
     def commit(self):
         return self.connection.commit()
@@ -788,7 +792,7 @@ FORMAT_QMARK_REGEX = re.compile(r'(?<!%)%s')
 class SqliteAdapter(GenericAdapter):
     """Adapter for Sqlite databases.
     """
-    protocol = 'sqlite'
+    scheme = 'sqlite'
 
     def __init__(self, db_path, **kwargs):
         self.driver_args = kwargs
@@ -983,7 +987,7 @@ class SqliteAdapter(GenericAdapter):
 class MysqlAdapter(GenericAdapter):
     """Adapter for MySql databases.
     """
-    protocol = 'mysql'
+    scheme = 'mysql'
 
     def __init__(self, url, **kwargs):
         match = re.match('^(?P<user>[^:@]+)(:(?P<password>[^@]*))?@(?P<host>[^:/]+)'
@@ -1063,7 +1067,7 @@ class MysqlAdapter(GenericAdapter):
 class PostgreSqlAdapter(GenericAdapter):
     """Adapter for PostgreSql databases.
     """
-    protocol = 'postgresql'
+    scheme = 'postgresql'
 
     def __init__(self, url, **kwargs):
         match = re.match('^(?P<user>[^:@]+)(:(?P<password>[^@]*))?@(?P<host>[^:/]+)'

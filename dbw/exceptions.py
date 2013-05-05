@@ -13,7 +13,7 @@ class AdapterError(DbwError):
 
 
 class AdapterNotFound(AdapterError):
-    """Suitable db adapter no found for the specified protocol.
+    """No suitable db adapter was found for the specified scheme.
     """
 
 

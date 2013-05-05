@@ -151,14 +151,14 @@ from .model_fields import *  # NOQA
 
 
 def connect(url):
-    """Search for suitable adapter by protocol in the given URL
+    """Search for suitable adapter by scheme in the given URL
     @param url: database URL. Its form depends on the adapter, but generally is
-        like 'protocol://username:password@host:port/db_name'
-    @return: adapter instance, which handles the specified protocol
+        like 'scheme://username:password@host:port/db_name'
+    @return: adapter instance, which handles the specified scheme
     """
     for AdapterClass in globals().values():
         if isinstance(AdapterClass, type) and issubclass(AdapterClass, GenericAdapter):
-            url_start = AdapterClass.protocol + '://'
+            url_start = AdapterClass.scheme + '://'
             if url.startswith(url_start):
                 break
     else:
