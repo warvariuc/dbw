@@ -105,7 +105,7 @@ class QueryManager(models.ModelAttr):
                     from_.append(models.LeftJoin(field.related_model,
                                                  on=(field_expression == field.related_model.id)))
 
-        #print(db._select(*fields, from_ = from_, where = where, orderby = orderby, limit = limit))
+        # print(db._select(*fields, from_ = from_, where = where, orderby = orderby, limit = limit))
         # retrieve the values from the DB
         rows = db.select(*fields, from_=from_, where=where, orderby=orderby, limit=limit)
 

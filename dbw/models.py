@@ -311,11 +311,10 @@ class Model(metaclass=ModelBase):
         return '%s(%s)' % (self.__class__.__name__, ', '.join(values))
 
     @classmethod
-    def COUNT(cls, where=None):
+    def COUNT(cls):
         """Get COUNT expression for this table.
-        @param where: WHERE expression
         """
-        return dbw.COUNT(where or cls)  # COUNT expression
+        return dbw.Expression('_COUNT', None, model=cls)
 
 
 class Join():

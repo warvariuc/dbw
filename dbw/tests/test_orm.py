@@ -188,7 +188,7 @@ class TestModelFields(unittest.TestCase):
 
 class TestExpressions(unittest.TestCase):
 
-    def test_id_field(self):
+    def test_expressions(self):
 
         class TestModel1(dbw.Model):
             field1 = dbw.IntegerField()
@@ -199,5 +199,12 @@ class TestExpressions(unittest.TestCase):
 
         self.assertEqual(str(TestModel1.id == 1), '(test_model1.id = 1)')
         self.assertEqual(str(TestModel1.field1 == 1), '(test_model1.field1 = 1)')
-        self.assertEqual(str(TestModel1.field2 == 1), "(test_model1.field2 = '1')")
+        self.assertEqual(str(TestModel1.field2 == 2), "(test_model1.field2 = '2')")
         self.assertEqual(str(TestModel2.field3 == 3), "(test_model2.field3_id = 3)")
+        self.assertEqual(str(TestModel2.field3.upper()), "UPPER(test_model2.field3_id)")
+        self.assertEqual(str(TestModel2.field3.lower()), "LOWER(test_model2.field3_id)")
+        self.assertEqual(str(TestModel2.field3.min()), "MIN(test_model2.field3_id)")
+        self.assertEqual(str(TestModel2.field3.max()), "MAX(test_model2.field3_id)")
+        self.assertEqual(str(TestModel2.field3.in_(1, 2)), "(test_model2.field3_id IN (1, 2))")
+        self.assertEqual(str(TestModel2.field3.count()), "COUNT(test_model2.field3_id)")
+        self.assertEqual(str(TestModel2.field3.like('%ed')), "(test_model2.field3_id LIKE '%ed')")

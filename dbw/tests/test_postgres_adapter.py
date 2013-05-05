@@ -8,7 +8,7 @@ from decimal import Decimal
 import dbw
 
 
-#dbw.sql_logger.setLevel(dbw.logging.DEBUG)
+dbw.sql_logger.setLevel(dbw.logging.DEBUG)
 
 
 class PostgresqlAdapterTest(unittest.TestCase):
@@ -240,7 +240,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
         book.author
         self.assertEqual(db.get_last_query(), last_query)
 
-        count = dbw.COUNT(Book.id)
+        count = Book.id.count()
         rows = db.select(Book.author, count, where=(Book.author != None),
                          groupby=Book.author, having=(count > 1), orderby=[-count, Book.author])
         self.assertEqual(rows.rows, [[2, 3]])

@@ -94,12 +94,6 @@ class GenericAdapter():
     def commit(self):
         self.connection.commit()
 
-    def _autocommit(self):
-        """Commit if autocommit is set.
-        """
-        if self.autocommit:
-            self.commit()
-
     def rollback(self):
         return self.connection.rollback()
 
@@ -112,6 +106,8 @@ class GenericAdapter():
         start_time = time.time()
         try:
             result = self.cursor.execute(query, *args)
+            if self.autocommit:
+                self.commit()
         except Exception:
             logger.warning(query)
             raise
@@ -125,7 +121,7 @@ class GenericAdapter():
 
     def _MODELFIELD(self, field):
         """Render a table column name."""
-        #db = db or dbw.GenericAdapter # we do not use adapter here
+        # db = db or dbw.GenericAdapter # we do not use adapter here
         assert isinstance(field, dbw.ModelField)
         return '%s.%s' % (field.model, field.column.name)
 
@@ -482,7 +478,6 @@ class GenericAdapter():
         """
         query = self._insert(*fields)
         self.execute(query)
-        self._autocommit()
         return self.last_insert_id()
 
     def _update(self, *fields, where=None, limit=None):
@@ -758,7 +753,7 @@ class SqliteAdapter(GenericAdapter):
         import sqlite3
 
         self.driver = sqlite3
-        #path_encoding = sys.getfilesystemencoding() or locale.getdefaultlocale()[1] or 'utf8'
+        # path_encoding = sys.getfilesystemencoding() or locale.getdefaultlocale()[1] or 'utf8'
         if db_path != ':memory:':
             if not os.path.isabs(db_path):
                 # convert relative path to be absolute
@@ -772,7 +767,7 @@ class SqliteAdapter(GenericAdapter):
 
     def execute(self, query, *args):
         # convert '%s' to '?' as sqlite client expects
-        query = FORMAT_QMARK_REGEX.sub('?', query).replace('%%','%')
+        query = FORMAT_QMARK_REGEX.sub('?', query).replace('%%', '%')
         return super().execute(query, *args)
 
     def _truncate(self, model, mode=''):
@@ -1211,7 +1206,6 @@ class PostgreSqlAdapter(GenericAdapter):
         """
         query = self._insert(*fields) + ' RETURNING id'
         self.execute(query)
-        self._autocommit()
         return self.cursor.fetchone()[0]
 
     def _drop_table(self, table_name):

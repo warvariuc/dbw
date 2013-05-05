@@ -28,14 +28,29 @@ class Expression():
                 self.type = left.type
             else:
                 self.type = None
-                #left = str(left)
-                #raise Exception('Cast target must be an Expression/Field.')
+                # left = str(left)
+                # raise Exception('Cast target must be an Expression/Field.')
         else:
             self.type = type
         self.operation = operation
         self.left = left  # left operand
         self.right = right  # right operand
         self.__dict__.update(kwargs)  # additional arguments
+
+    def __str__(self, db=None):
+        """Construct the text of the WHERE clause from this Expression.
+        @param db: GenericAdapter subclass to use for rendering.
+        """
+        args = [arg for arg in (self.left, self.right) if arg is not Nil]  # filter nil operands
+        if not args:  # no args - treat operation as representation of the entire operation
+            return self.operation
+        db = db or dbw.generic_adapter
+        assert isinstance(db, dbw.GenericAdapter)
+        operation = getattr(db, self.operation)  # get the operation function from adapter
+        try:
+            return operation(*args)  # execute the operation
+        except:
+            return operation(*args)  # execute the operation
 
     def __and__(self, other):
         return Expression('_AND', self, other)
@@ -76,35 +91,32 @@ class Expression():
         expression.sort = 'ASC'
         return expression
 
-    def UPPER(self):
+    def upper(self):
         return Expression('_UPPER', self)
 
-    def LOWER(self):
+    def lower(self):
         return Expression('_LOWER', self)
 
-    def IN(self, *items):
+    def max(self):
+        """Get MAXimal value expression."""
+        return Expression('_MAX', self)
+
+    def min(self):
+        """Get MINimal value expression."""
+        return Expression('_MIN', self)
+
+    def in_(self, *items):
         """The IN clause."""
         return Expression('_IN', self, items)
 
-    def LIKE(self, pattern):
+    def like(self, pattern):
+        """Get LIKE expression."""
         assert isinstance(pattern, str), 'Pattern must be a string.'
         return Expression('_LIKE', self, pattern)
 
-    def __str__(self, db=None):
-        """Construct the text of the WHERE clause from this Expression.
-        @param db: GenericAdapter subclass to use for rendering.
-        """
-        args = [arg for arg in (self.left, self.right) if arg is not Nil]  # filter nil operands
-        if not args:  # no args - treat operation as representation of the entire operation
-            return self.operation
-        db = db or dbw.generic_adapter
-        assert isinstance(db, dbw.GenericAdapter)
-        operation = getattr(db, self.operation)  # get the operation function from adapter
-        try:
-            return operation(*args)  # execute the operation
-        except:
-            return operation(*args)  # execute the operation
-        
+    def count(self, distinct=False):
+        """Get non-empty COUNT expression."""
+        return Expression('_COUNT', self, distinct=distinct)
 
 
 class FieldExpression(Expression):
@@ -112,9 +124,8 @@ class FieldExpression(Expression):
     """
     def __init__(self, field):
         assert isinstance(field, ModelField)
-        super().__init__('_MODELFIELD', field)
         # `model` attribute is needed to extract `from_` tables
-        self.model = field.model
+        super().__init__('_MODELFIELD', field, model=field.model)
 
     def __call__(self, value):
         return self.left(value)
@@ -436,7 +447,7 @@ class RelatedRecordField(ModelField):
             raise exceptions.QueryError('Record ID must be an integer.')
 
 
-#class TableIdField(Field):
+# class TableIdField(Field):
 #    """This field stores id of a given table in this DB."""
 #    def _init_(self, index = ''):
 #        super()._init_(Column('INT', self, precision = 5, unsigned = True), None, index)
@@ -450,7 +461,7 @@ class RelatedRecordField(ModelField):
 #        except ValueError:
 #            raise SyntaxError('Table ID must be an integer.')
 #
-#class AnyRelatedRecordField(Field):
+# class AnyRelatedRecordField(Field):
 #    """This field stores id of a row of any table.
 #    It's a virtual field - it creates two real fields: one for keeping Record ID and another one
 #     for Table ID.
@@ -476,40 +487,8 @@ class RelatedRecordField(ModelField):
 #                  Expression('EQ', self._fields['tableId'], other._tableId),
 #                  Expression('EQ', self._fields['itemId'], other.id))
 
-# Aggregate functions ------------------------------------------------------------------------------
 
-def COUNT(expression=None, distinct=False):
-    if expression is None or isinstance(expression, Expression):
-        return Expression('_COUNT', expression, distinct=distinct)
-    elif dbw.is_model(expression):
-        return Expression('_COUNT', None, model=expression)
-    else:
-        raise dbw.QueryError('Argument must be a Field, an Expression or a Table.')
-
-
-def MAX(expression):
-    assert isinstance(expression, Expression), 'Argument must be a Field or an Expression.'
-    return Expression('_MAX', expression)
-
-
-def MIN(expression):
-    assert isinstance(expression, Expression), 'Argument must be a Field or an Expression.'
-    return Expression('_MIN', expression)
-
-
-# transformation functions -------------------------------------------------------------------------
-
-def UPPER(expression):
-    assert isinstance(expression, Expression), 'Argument must be a Field or an Expression.'
-    return Expression('_UPPER', expression)
-
-
-def LOWER(expression):
-    assert isinstance(expression, Expression), 'Argument must be a Field or an Expression.'
-    return Expression('_LOWER', expression)
-
-
-def CONCAT(*expressions):
+def concat(*expressions):
     """Concatenate two or more expressions/strings.
     """
     for expression in expressions:
