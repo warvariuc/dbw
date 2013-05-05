@@ -198,7 +198,7 @@ class Model(metaclass=ModelBase):
         @param *args: tuples (ModelField or field_name, value)
         @param **kwargs: {field_name: fieldValue}
         """
-        if not isinstance(db, adapters.GenericAdapter) and db is not None:
+        if not (isinstance(db, adapters.GenericAdapter) or db is None):
             raise exceptions.RecordError('`db` should be a GenericAdapter instance')
         self._db = db
 

@@ -24,7 +24,7 @@ class SqliteAdapterTest(test_postgres_adapter.PostgresqlAdapterTest):
     @classmethod
     def tearDownClass(cls):
         cls.db.disconnect()
-        os.remove(cls.db.db_path)
+        os.remove(cls.db.url)
 
     def _get_book_field_info(self):
         """Info about how Book record fields are stored and retrieved.

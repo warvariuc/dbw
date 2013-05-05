@@ -150,6 +150,9 @@ from .db_indexes import *  # NOQA
 from .model_fields import *  # NOQA
 
 
+generic_adapter = GenericAdapter()
+
+
 def connect(url):
     """Search for suitable adapter by scheme in the given URL
     @param url: database URL. Its form depends on the adapter, but generally is

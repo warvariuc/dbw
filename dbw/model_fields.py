@@ -97,7 +97,8 @@ class Expression():
         args = [arg for arg in (self.left, self.right) if arg is not Nil]  # filter nil operands
         if not args:  # no args - treat operation as representation of the entire operation
             return self.operation
-        db = db or dbw.GenericAdapter
+        db = db or dbw.generic_adapter
+        assert isinstance(db, dbw.GenericAdapter)
         operation = getattr(db, self.operation)  # get the operation function from adapter
         try:
             return operation(*args)  # execute the operation
