@@ -50,12 +50,6 @@ class GenericAdapter():
         self.connection = None
         self.cursor = None
 
-    def commit(self):
-        self.connection.commit()
-
-    def rollback(self):
-        return self.connection.rollback()
-
     def execute(self, query, *args):
         """Execute a query.
         """
@@ -74,6 +68,12 @@ class GenericAdapter():
         self._queries.append((start_time, query, finish_time - start_time))
         self._queries = self._queries[-self._MAX_QUERIES:]
         return result
+
+    def commit(self):
+        self.connection.commit()
+
+    def rollback(self):
+        return self.connection.rollback()
 
     def get_last_query(self):
         return self._queries[-1] if self._queries else (0, '', 0)
@@ -214,7 +214,7 @@ class GenericAdapter():
             assert isinstance(column, Column), 'It must be a Column instance.'
             encode_func_name = '_encode_' + column.type.upper()
             encode_func = getattr(self, encode_func_name, None)
-            if callable(encode_func):
+            if encode_func:
                 value = encode_func(value, column)
                 assert isinstance(value, (str, int, Decimal)), \
                     'Encode `%s.%s` function did not return a string, integer or decimal' \
@@ -276,11 +276,13 @@ class GenericAdapter():
         """Get CREATE TABLE statement for the given model in this DB.
         """
         assert dbw.is_model(model), 'Provide a Table subclass.'
+        query = 'CREATE TABLE %s (\n' % str(model)
         columns = self._get_create_table_columns(model)
+        query += ',\n  '.join(columns)
         indexes = self._get_create_table_indexes(model)
-        query = 'CREATE TABLE %s (' % str(model)
-        query += '\n  ' + ',\n  '.join(columns)
-        query += ',\n  ' + ',\n  '.join(indexes) + '\n) '
+        if indexes:
+            query += ',\n  ' + ',\n  '.join(indexes)
+        query += '\n) '
         queries = [query]
         queries.extend(self._get_create_table_other(model))
         return queries
@@ -305,16 +307,15 @@ class GenericAdapter():
             column_str += ' NOT'
         column_str += ' NULL'
         if column.default is not dbw.Nil:
-            column_str += ' DEFAULT ' + self._render(column.default, None)
+            column_str += ' DEFAULT ' + self._render(column.default, column)
         if column.autoincrement:
             column_str += ' AUTO_INCREMENT'
         if column.comment:
-            column_str += ' COMMENT ' + self._render(column.comment, None)
+            column_str += ' /* %s */' % column.comment
         return column_str
 
     def _encode_INT(self, value, column):
-        """Encode a value for insertion in a column of INT type.
-        """
+        """Encode a value for insertion in a column of INT type."""
         return str(int(value))
 
     def _declare_BOOL(self, column):
@@ -325,25 +326,31 @@ class GenericAdapter():
             column_str += ' NOT'
         column_str += ' NULL'
         if column.default is not dbw.Nil:
-            column_str += ' DEFAULT ' + self._render(column.default, None)
+            column_str += ' DEFAULT ' + self._render(column.default, column)
         if column.comment:
-            column_str += ' COMMENT ' + self._render(column.comment, None)
+            column_str += ' /* %s */' % column.comment
         return column_str
 
     def _encode_BOOL(self, value, column):
-        """Encode a value for insertion in a column of INT type.
-        """
+        """Encode a value for insertion in a column of INT type."""
         return str(int(value))
 
     def _decode_BOOL(self, value, column):
-        """Decode a value from the DB to a value good for the corresponding model field.
-        """
+        """Decode a value from the DB to a value good for the corresponding model field."""
         return bool(int(value))
 
     def _declare_CHAR(self, column):
         """CHAR, VARCHAR
         """
-        return 'VARCHAR (%i)' % column.precision
+        column_str = 'VARCHAR (%i)' % column.precision
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _decode_CHAR(self, value, column):
         if isinstance(value, bytes):
@@ -357,13 +364,37 @@ class GenericAdapter():
         D is the number of digits to the right of the decimal point (the scale).
         It has a range of 0 to 30 and must be no larger than M.
         """
-        return 'DECIMAL(%s, %s)' % (column.precision, column.scale)
+        column_str = 'DECIMAL(%s, %s)' % (column.precision, column.scale)
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _declare_DATE(self, column):
-        return 'DATE'
+        column_str = 'DATE'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _declare_DATETIME(self, column):
-        return 'INTEGER'
+        column_str = 'INTEGER'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _encode_DATETIME(self, value, column):
         """Not all DBs have microsecond precision in DATETIME columns.
@@ -381,10 +412,26 @@ class GenericAdapter():
         return DateTime.fromtimestamp(value / 1000000)
 
     def _declare_TEXT(self, column):
-        return 'TEXT'
+        column_str = 'TEXT'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _declare_BLOB(self, column):
-        return 'BLOB'
+        column_str = 'BLOB'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _encode_BLOB(self, value, column):
         return "'%s'" % base64.b64encode(value)
@@ -405,7 +452,7 @@ class GenericAdapter():
 #            tables |= self._getExpressionTables(expression.right)
 #        return tables
 
-    def last_insert_id(self):
+    def _get_last_insert_id(self):
         """Get last insert ID."""
         return self.cursor.lastrowid
 
@@ -418,31 +465,37 @@ class GenericAdapter():
         fields = []
         model = None
         for item in _fields:
-            assert isinstance(item, (list, tuple)) and len(item) == 2, \
-                'Pass tuples with 2 items: (field, value).'
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                raise dbw.QueryError('Pass tuples with 2 items: (field, value).')
             field = item[0]
-            assert isinstance(field, dbw.ModelField), 'First item must be a Field.'
+            if not isinstance(field, dbw.ModelField):
+                raise dbw.QueryError('First item must be a Field.')
             _model = field.model
             model = model or _model
-            assert model is _model, 'Pass fields from the same table'
+            if model is not _model:
+                raise dbw.QueryError('Pass fields of the same table')
             if not field.column.autoincrement:
                 fields.append(item)
         keys = ', '.join(field.column.name for field, _ in fields)
         values = ', '.join(self.render(value, field) for field, value in fields)
         return 'INSERT INTO %s (%s) VALUES (%s)' % (model, keys, values)
 
-    def insert(self, *fields):
+    def insert(self, *fields, get_query=False):
         """Insert records in the db.
         @param *args: tuples in form (Field, value)
+        @param get_query: don't execute the query - only return the generated SQL
+        @return: id of the inserted record
         """
         query = self._insert(*fields)
+        if get_query:
+            return query
         self.execute(query)
-        return self.last_insert_id()
+        return self._get_last_insert_id()
 
     def _update(self, *fields, where=None, limit=None):
         """UPDATE table_name SET col_name1 = expression1, col_name2 = expression2, ...
-          [ WHERE expression ] [ LIMIT limit_amount ]
-          """
+           [ WHERE expression ] [ LIMIT limit_amount ]
+        """
         model = None
         for item in fields:
             assert isinstance(item, (list, tuple)) and len(item) == 2, \
@@ -456,16 +509,22 @@ class GenericAdapter():
         sql_w = (' WHERE ' + self.render(where)) if where else ''
         sql_v = ', '.join(['%s= %s' % (field.column.name, self.render(value, field))
                            for (field, value) in fields])
-        return 'UPDATE %s SET %s%s' % (model, sql_v, sql_w)
+        sql_other = self._LIMIT(limit)
 
-    def update(self, *fields, where=None, limit=None):
+        return 'UPDATE %s SET %s%s%s' % (model, sql_v, sql_w, sql_other)
+
+    def update(self, *fields, where=None, limit=None, get_query=False):
         """Update records
         @param *args: tuples in form (ModelField, value)
         @param where: an Expression or string for WHERE part of the DELETE query
         @param limit: a tuple in form (start, end) which specifies the range dor deletion.
+        @param get_query: don't execute the query - only return the generated SQL
+        @return: number of affected rows
         """
-        sql = self._update(*fields, where=where)
-        self.execute(sql)
+        query = self._update(*fields, where=where)
+        if get_query:
+            return query
+        self.execute(query)
         return self.cursor.rowcount
 
     def _delete(self, model, where, limit=None):
@@ -474,14 +533,18 @@ class GenericAdapter():
         sql_w = ' WHERE ' + self.render(where) if where else ''
         return 'DELETE FROM %s%s' % (model, sql_w)
 
-    def delete(self, model, where, limit=None):
+    def delete(self, model, where, limit=None, get_query=False):
         """Delete records from table with the given condition and limit.
         @param talbe: a Model subclass, whose records to delete
         @param where: an Expression or string for WHERE part of the DELETE query
         @param limit: a tuple in form (start, end) which specifies the range dor deletion.
+        @param get_query: don't execute the query - only return the generated SQL
+        @return: number of affected rows
         """
-        sql = self._delete(model, where)
-        self.execute(sql)
+        query = self._delete(model, where)
+        if get_query:
+            return query
+        self.execute(query)
         return self.cursor.rowcount
 
     def _select(self, *fields, from_='', where='', orderby='', limit=None,
@@ -559,11 +622,11 @@ class GenericAdapter():
         else:
             raise dbw.exceptions.QueryError('Where argument should be a dict, str or Expression')
 
-        sql_select = ''
+        sql_distinct = ''
         if distinct is True:
-            sql_select += 'DISTINCT'
+            sql_distinct += 'DISTINCT '
         elif distinct:
-            sql_select += 'DISTINCT ON (%s)' % distinct
+            sql_distinct += 'DISTINCT ON (%s) ' % distinct
 
         sql_other = ''
         if groupby:
@@ -607,12 +670,12 @@ class GenericAdapter():
 #                sql_other += ' ORDER BY %s' % ', '.join(map(str, (table.id for table in tables)))
 
         sql_other += self._LIMIT(limit)
-        sql = 'SELECT %s %s FROM %s%s%s' % (sql_select, sql_fields, sql_from, sql_where, sql_other)
+        sql = 'SELECT %s%s FROM %s%s%s' % (sql_distinct, sql_fields, sql_from, sql_where, sql_other)
 
         return Rows(self, sql, fields)
 
     def select(self, *fields, from_='', where='', orderby='', limit=None,
-               distinct='', groupby='', having=''):
+               distinct='', groupby='', having='', get_query=False):
         """Create and return SELECT query.
         @param fields: tables, fields or joins;
         @param from_: tables and joined tables to select from.
@@ -624,10 +687,14 @@ class GenericAdapter():
         @param orderby: list of expressions to sort by
         @param groupby: list of expressions to group by
         @param having: list of condition expressions to apply within group by
+        @param get_query: don't execute the query - only return the generated SQL
+        @return: Rows instance containing the SELECT result
         tables are taken from fields and `where` expression;
         """
         rows = self._select(*fields, from_=from_, where=where, orderby=orderby,
                              limit=limit, distinct=distinct, groupby=groupby, having=having)
         assert isinstance(rows, Rows)
-        rows._execute()
+        if get_query:
+            return rows.query
+        rows.execute_query()
         return rows

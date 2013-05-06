@@ -243,4 +243,4 @@ class PostgresqlAdapterTest(unittest.TestCase):
         count = Book.id.count()
         rows = db.select(Book.author, count, where=(Book.author != None),
                          groupby=Book.author, having=(count > 1), orderby=[-count, Book.author])
-        self.assertEqual(rows.rows, [[2, 3]])
+        self.assertEqual(rows.values, [[2, 3]])

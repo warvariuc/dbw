@@ -91,7 +91,15 @@ class SqliteAdapter(GenericAdapter):
         return indexes
 
     def _declare_CHAR(self, column):
-        return 'TEXT'
+        column_str = 'TEXT'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _declare_INT(self, column):
         """INTEGER column type for Sqlite.
@@ -100,13 +108,30 @@ class SqliteAdapter(GenericAdapter):
         bytes_count = math.ceil((max_int.bit_length() - 1) / 8)  # add one bit for sign
         if bytes_count > 8:
             raise Exception('Too many digits specified.')
-        return 'INTEGER'
+
+        column_str = 'INTEGER'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _declare_DATE(self, column):
         """Sqlite db does have native DATE data type.
         We store dates in it as integer number of days since the Epoch.
         """
-        return 'INTEGER'
+        column_str = 'INTEGER'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _encode_DATE(self, value, column):
         if isinstance(value, str):
@@ -121,10 +146,18 @@ class SqliteAdapter(GenericAdapter):
     def _declare_DECIMAL(self, column):
         """In Sqlite there is a special DECIMAL, which we won't use.
         We will store decimals as integers."""
-        return 'INTEGER'
+        column_str = 'INTEGER'
+        if not column.nullable:
+            column_str += ' NOT'
+        column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
+        if column.comment:
+            column_str += ' /* %s */' % column.comment
+        return column_str
 
     def _encode_DECIMAL(self, value, column):
-        return Decimal(value) * (10 ** column.scale)
+        return int(Decimal(value) * (10 ** column.scale))
 
     def _decode_DECIMAL(self, value, column):
         return Decimal(value) / (10 ** column.scale)

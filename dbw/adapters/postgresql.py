@@ -56,7 +56,7 @@ class PostgreSqlAdapter(GenericAdapter):
                 column_str += ' NOT'
             column_str += ' NULL'
             if column.default is not dbw.Nil:
-                column_str += ' DEFAULT ' + self._render(column.default, None)
+                column_str += ' DEFAULT ' + self._render(column.default, column)
 
         return column_str
 
@@ -68,9 +68,7 @@ class PostgreSqlAdapter(GenericAdapter):
             column_str += ' NOT'
         column_str += ' NULL'
         if column.default is not dbw.Nil:
-            column_str += ' DEFAULT ' + self._render(column.default, None)
-        if column.comment:
-            column_str += ' COMMENT ' + self._render(column.comment, None)
+            column_str += ' DEFAULT ' + self._render(column.default, column)
         return column_str
 
     def _encode_BOOL(self, value, column):
@@ -88,6 +86,8 @@ class PostgreSqlAdapter(GenericAdapter):
         if not column.nullable:
             column_str += ' NOT'
         column_str += ' NULL'
+        if column.default is not dbw.Nil:
+            column_str += ' DEFAULT ' + self._render(column.default, column)
         return column_str
 
     def _encode_DATETIME(self, value, column):
@@ -149,9 +149,8 @@ class PostgreSqlAdapter(GenericAdapter):
             column = field.column
             if column is not None and column.comment:
                 queries.append(
-                    "COMMENT ON COLUMN %s.%s IS %s" % (model._meta.db_name, column.name,
-                                                       self.escape(column.comment))
-                )
+                    "COMMENT ON COLUMN %s.%s IS %s"
+                    % (model._meta.db_name, column.name, self.escape(column.comment)))
 
         return queries
 

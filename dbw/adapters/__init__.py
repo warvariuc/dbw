@@ -50,22 +50,22 @@ class Rows():
         """
         self.db = db
         self.query = query
+        self.values = []
         self.fields = tuple(fields)
         self._fields_str = tuple(str(field) for field in fields)
         # {field_str: field_order}
         self._fields_order = dict((field_str, i) for i, field_str in enumerate(self._fields_str))
 
-    def _execute(self):
+    def execute_query(self):
         """Execute the SELECT query and process results fetched from the DB.
         Decode values to model fields representation.
         """
         self.db.execute(self.query)
-        rows = list(self.db.cursor.fetchall())
-
-        for i, row in enumerate(rows):
+        rows = []
+        for row in self.db.cursor.fetchall():
             new_row = []
-            for j, field in enumerate(self.fields):
-                value = row[j]
+            for field_no, field in enumerate(self.fields):
+                value = row[field_no]
                 if value is not None and isinstance(field, dbw.FieldExpression):
                     column = field.left.column
                     if isinstance(column, Column):
@@ -73,8 +73,8 @@ class Rows():
                         if decode_func:
                             value = decode_func(value, column)
                 new_row.append(value)
-            rows[i] = new_row
-        self.rows = rows
+            rows.append(new_row)
+        self.values = rows
 
     def value(self, row_no, field):
         """Get a value.
@@ -82,26 +82,26 @@ class Rows():
         @param field: field instance or column number
         """
         field_no = field if isinstance(field, int) else self._fields_order[str(field)]
-        return self.rows[row_no][field_no]
+        return self.values[row_no][field_no]
 
     def __len__(self):
-        return len(self.rows)
+        return len(self.values)
 
-    def __getitem__(self, i):
-        return self.rows[i]
+    def __getitem__(self, row_no):
+        return self.values[row_no]
 
     def __iter__(self):
         """Iterator over records."""
-        return iter(self.rows)
+        return iter(self.values)
 
-    def __str__(self):
-        return pprint.pformat(self.rows)
+    def __repr__(self):
+        return pprint.pformat(self.values)
 
     def dictresult(self):
         """Iterator of the result which return row by row in form
         {'field1_name': field1_value, 'field2_name': field2_value, ...}
         """
-        for row in self.rows:
+        for row in self.values:
             yield {self._fields_str[i]: value for i, value in enumerate(row)}
 
 
