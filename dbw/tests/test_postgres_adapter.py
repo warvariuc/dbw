@@ -44,7 +44,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
             ('is_favorite', bool, bool),
         )
 
-    def runTest(self):
+    def test_adapter(self):
 
         class Author(dbw.Model):
             """Authors catalog.
