@@ -6,7 +6,7 @@ Tutorial
 Installing DBW
 --------------
 
-Installing from ``pypi`` using ``pip``::
+Installing from ``PyPI`` using ``pip``::
 
 	vic@vic-X202E ~/projects » mkvirtualenv test-dbw
 	Using base prefix '/usr'
@@ -92,8 +92,8 @@ To run tests:
 
 1. Put the sources somewhere, have ``nose`` and ``psycopg2`` installed.
 2. Set up a test PostgreSql database.
-3. Ensure that ``run-tests.py`` has the right URL for test databases.
-4. Run tests
+3. Ensure that ``run-tests.py`` has correct URLs of test databases.
+4. Run tests.
 
 ::
 
