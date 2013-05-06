@@ -20,27 +20,37 @@ Django ORM has **too** much magic - you have too look into docs to know all the 
 Some examples
 -------------
 
-We have a model::
+We have a model:
+
+.. code-block:: python
 
     class Book(Model):
         price = DecimalField(max_digits=10, decimal_places=2, default='0.00')
 
 
-In Django you write::
+In Django you write:
+
+.. code-block:: python
 
     Book.objects.filter(price__gte=10)
 
 to select all books with price >= 10.
 
-With DBW you do::
+With DBW you do:
+
+.. code-block:: python
 
     Book.objects.select(Book.price >= 10)
 
-In Django you do::
+In Django you do:
+
+.. code-block:: python
 
     Book.objects.filter(price__gte=10).values('id')
 
-In DBW you write::
+In DBW you write:
+
+.. code-block:: python
 
    db.select(Book.id, where=(Book.price >= 10))
 
