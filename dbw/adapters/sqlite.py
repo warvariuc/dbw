@@ -172,7 +172,7 @@ class SqliteAdapter(GenericAdapter):
         self.execute("PRAGMA table_info('%s')" % table_name)  # name, type, notnull, dflt_value, pk
         columns = {}
         for row in self.cursor.fetchall():
-            dbw.logger.debug('Found table column: %s, %s' % (table_name, row))
+            dbw.logger.debug('Found table column: %s, %s', table_name, row)
             type_name = row[2].lower()
             # INTEGER PRIMARY KEY fields are auto-generated in sqlite
             # INT PRIMARY KEY is not the same as INTEGER PRIMARY KEY!
@@ -184,7 +184,7 @@ class SqliteAdapter(GenericAdapter):
             column = Column(type=type_name, name=row[1], default=row[4],
                             precision=19, nullable=(not row[3]), autoincrement=autoincrement)
             columns[column.name] = column
-            dbw.logger.debug('Reproduced table column: %s, %s' % (table_name, column))
+            dbw.logger.debug('Reproduced table column: %s, %s', table_name, column)
         return columns
 
 

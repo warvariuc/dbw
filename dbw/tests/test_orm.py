@@ -114,12 +114,17 @@ class TestModels(unittest.TestCase):
 
     def test_model_inheritance(self):
 
+        self.assertEqual(dbw.Model._meta.abstract, True)
+
         class TestModel1(dbw.Model):
             field1 = dbw.CharField(max_length=100)
 
         class TestModel2(TestModel1):
             field1 = dbw.IntegerField()
             field2 = dbw.CharField(max_length=100)
+
+        self.assertEqual(TestModel1._meta.abstract, False)
+        self.assertEqual(TestModel2._meta.abstract, False)
 
         self.assertIsNot(TestModel2.field1, TestModel1.field1)
         self.assertIsInstance(TestModel1.field1.left, dbw.CharField)

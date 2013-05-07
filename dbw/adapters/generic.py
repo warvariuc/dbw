@@ -33,7 +33,7 @@ class GenericAdapter():
         """Connect to the DB.
         """
         self.url = url
-        dbw.logger.debug('Creating adapter for `%s`' % self)
+        dbw.logger.debug('Creating adapter for `%s`', self)
         self._queries = []  # [(query_start_time, query_str, query_execution_duration),]
         self.autocommit = autocommit
         self.connection = self._connect(url, *args, **kwargs)
@@ -53,7 +53,7 @@ class GenericAdapter():
     def execute(self, query, *args):
         """Execute a query.
         """
-        dbw.sql_logger.debug('DB query: %s' % query)
+        dbw.sql_logger.debug(query)
         if not self.cursor:
             raise dbw.AdapterError('No connection has been set yet.')
         start_time = time.time()
@@ -62,7 +62,7 @@ class GenericAdapter():
             if self.autocommit:
                 self.commit()
         except Exception:
-            dbw.logger.warning(query)
+            dbw.logger.warning('The failed query: %s', query)
             raise
         finish_time = time.time()
         self._queries.append((start_time, query, finish_time - start_time))
@@ -196,7 +196,7 @@ class GenericAdapter():
                 try:
                     return self._render(value, cast_field.column)
                 except Exception:
-                    dbw.logger.warning('Check %r._cast().' % cast_field)
+                    dbw.logger.warning('Check %r._cast().', cast_field)
                     raise
             return self._render(value)
 
@@ -578,8 +578,8 @@ class GenericAdapter():
             if isinstance(field, dbw.Expression):
                 field = self.render(field)
             elif not isinstance(field, str):
-                raise dbw.QueryError('Field must an Expression/Field/str instance. Got `%s`'
-                                     % dbw.get_object_path(field))
+                raise dbw.QueryError(
+                    'Field must an Expression/Field/str instance. Got `%r`' % field)
             _fields.append(field)
         sql_fields = ', '.join(_fields)
 

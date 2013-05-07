@@ -20,6 +20,10 @@ sys.path.insert(0, os.path.join(BASE_DIR, '..'))
 
 def run_tests(verbosity=1, interactive=False):
 
+#     import dbw
+#     dbw.logger.setLevel(dbw.logging.DEBUG)
+#     dbw.sql_logger.setLevel(dbw.logging.DEBUG)
+
     if POSTGRESQL_TEST_DB:
         os.environ.setdefault('POSTGRESQL_TEST_DB', POSTGRESQL_TEST_DB)
     if SQLITE_TEST_DB:

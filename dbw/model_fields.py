@@ -52,6 +52,9 @@ class Expression():
         except:
             return operation(*args)  # execute the operation
 
+    def __repr__(self):
+        return dbw.get_object_path(self)
+
     def __and__(self, other):
         return Expression('_AND', self, other)
 
@@ -149,9 +152,9 @@ class ModelField(Expression, models.ModelAttr):
         self.name = self._model_attr_info.name
         self.model = self._model_attr_info.model
         if not self.name.islower() or self.name.startswith('_'):
-            raise dbw.ModelError('Field `%s` in model `%s`: field names must be lowercase and '
-                                 'must not start with `_`.'
-                                 % (self.name, dbw.get_object_path(self._model_attr_info.model)))
+            raise dbw.ModelError(
+                'Field `%s` in model `%r`: field names must be lowercase and must not start with '
+                '`_`.' % (self.name, self._model_attr_info.model))
         assert isinstance(column, adapters.Column)
         self.column = column
         assert isinstance(db_index, (str, bool, db_indexes.DbIndex))
@@ -335,8 +338,8 @@ class BooleanField(ModelField):
 
     def __set__(self, record, value):
         if not isinstance(value, bool) and value is not None:
-            raise exceptions.RecordValueError('Provide a bool or None (got `%s`).'
-                                              % dbw.get_object_path(value))
+            raise exceptions.RecordValueError(
+                'Provide a bool or None (got `%s`).' % dbw.get_object_path(value))
         record.__dict__[self.name] = value
 
 
@@ -353,9 +356,9 @@ class _RecordId():
     def __set__(self, record, value):
         """Setter for this attribute."""
         if not isinstance(value, int) and value is not None:
-            raise exceptions.RecordValueError('You can assign only int or None to %s.%s'
-                                              % (dbw.get_object_path(record),
-                                                 self._record_field._name))
+            raise exceptions.RecordValueError(
+                'You can assign only int or None to %s.%s'
+                % (dbw.get_object_path(record), self._record_field._name))
         record.__dict__[self._record_field._name] = value
 
     def __get__(self, record, model):
@@ -414,10 +417,8 @@ class RelatedRecordField(ModelField):
         """Setter for this field."""
         if not isinstance(value, self.related_model) and value is not None:
             raise exceptions.RecordValueError(
-                'You can assign to `%s.%s` attribute only instances of model `%s` or None'
-                % (dbw.get_object_path(self.model), self.name,
-                   dbw.get_object_path(self.related_model))
-            )
+                'You can assign to `%r.%s` attribute only instances of model `%r` or None'
+                % (self.model, self.name, self.related_model))
         record.__dict__[self._name] = value
 
     def __call__(self, value):
@@ -426,8 +427,8 @@ class RelatedRecordField(ModelField):
         if isinstance(value, self.related_model):
             value = value.id
         elif not isinstance(value, int) and value is not None:
-            raise exceptions.RecordValueError('Bad value. Pass a `%s` instance, int or None'
-                                              % dbw.get_object_path(self.related_model))
+            raise exceptions.RecordValueError('Bad value. Pass a `%r` instance, int or None'
+                                              % self.related_model)
         return (self, value)
 
     @dbw.LazyProperty

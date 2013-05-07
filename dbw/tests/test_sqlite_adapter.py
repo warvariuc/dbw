@@ -35,5 +35,5 @@ class SqliteAdapterTest(test_postgres_adapter.PostgresqlAdapterTest):
             ('author_id', int, int),
             ('price', Decimal, int),
             ('publication_date', Date, int),
-            ('is_favorite', bool, int),
+            ('is_popular', bool, int),
         )

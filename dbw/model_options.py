@@ -1,4 +1,5 @@
-"""Note: model options (db table name, ordering, ...) in kept in `Model._meta` attribute are not
+"""
+Note: model options (db table name, ordering, ...) stored in `Model._meta` attribute are not
 inherited from the parent model.
 """
 from collections import OrderedDict
@@ -21,8 +22,11 @@ class ModelOptions(models.ModelAttr):
             class and put abstract=True in the _meta attribute. This model will then not be used to
             create any database table.
         """
-        # TODO: add `proxy` argument, similarly to Django
-        if not db_name:
+        if __builtins__.get('test'): import ipdb; ipdb.set_trace()
+        # TODO: add `proxy` option, similarly to Django?
+        if abstract:
+            db_name = ''  # doesn't make sense to set it for abstract models
+        elif not db_name:
             # create db name from model class name
             db_name = self._model_attr_info.model.__name__
             db_name = ''.join('_' + c.lower() if c.isupper() else c for c in db_name).strip('_')

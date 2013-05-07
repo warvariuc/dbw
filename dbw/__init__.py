@@ -40,7 +40,8 @@ LOG_SETTINGS = {
     'version': 1,
     'formatters': {
         'detailed': {
-            'format': '%(asctime)s %(module)-17s line:%(lineno)-4d %(levelname)-8s %(message)s',
+            'format': '%(asctime)s [%(levelname)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
         'email': {
             'format': 'Timestamp: %(asctime)s\nModule: %(module)s\n' \
@@ -102,7 +103,7 @@ def get_object_by_path(object_path, package_path=None):
 def is_model(obj):
     """Check if the argment is a Model instance.
     """
-    return isinstance(obj, models.ModelBase)
+    return isinstance(obj, models.ModelMeta)
 
 
 def listify(obj):
@@ -110,7 +111,7 @@ def listify(obj):
     """
     if isinstance(obj, list):
         return obj
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, models.ModelBase)):
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, models.ModelMeta)):
         return list(obj)
     return [obj]
 

@@ -33,31 +33,6 @@ class QueryManager(models.ModelAttr):
             raise exceptions.ModelError('You cannot use query manager on abstract models.')
         return self
 
-    def check_table(self, db):
-        """Check if corresponding table for this model exists in the db and has all necessary
-        columns. Add check_table call in very model method that uses a db.
-        """
-        if not isinstance(db, adapters.GenericAdapter):
-            raise exceptions.AdapterError('Need a database adapter.')
-        if db.url in self._checked_dbs:
-            # this db was already checked
-            return
-        model = self.model
-        logger.debug('Model.check_table: checking db table %s' % model)
-        table_name = model._meta.db_name
-        if table_name not in db.get_tables():
-            self._handle_table_missing(db)
-        model_columns = {field.column.name: field.column for field in model._meta.fields.values()}
-        db_columns = db.get_columns(table_name)
-#        logger.debug(pprint.pformat(list(column.str() for column in dbColumns.values())))
-#        logger.debug(pprint.pformat(list(column.str() for column in modelColumns.values())))
-        for column_name, column in model_columns.items():
-            db_column = db_columns.pop(column_name, None)
-            if not db_column:  # model column is not found in the db
-                print('Column in the db not found: %s' % column.str())
-        logger.debug('CREATE TABLE query:\n%s' % db.get_create_table_query(model))
-        self._checked_dbs.add(db.url)
-
     def create(self, db, *args, **kwargs):
         record = self.model(db, *args, **kwargs)
         record.save()
@@ -89,7 +64,8 @@ class QueryManager(models.ModelAttr):
         @param select_related: whether to retrieve objects related by foreign keys in the same query
         """
         model = self.model
-        logger.debug("Model.get('%s', db= %s, where= %s, limit= %s)" % (model, db, where, limit))
+        logger.debug(
+            "Model.objects.get('%s', db= %s, where= %s, limit= %s)", model, db, where, limit)
         self.check_table(db)
         orderby = orderby or model._meta.ordering  # use default table ordering if no ordering given
         fields = list(model)
@@ -141,11 +117,35 @@ class QueryManager(models.ModelAttr):
         """
         self.check_table(db)
         model = self.model
-        count_expression = model.COUNT(where)
+        count_expression = model.count(where)
         count = db.select(count_expression, from_=model).value(0, count_expression)
-        logger.debug('Model.get_count(%s, db= %s, where= %s) = %s'
-                     % (model, db, where, count))
+        logger.debug('Model.get_count(%s, db= %s, where= %s) = %s', model, db, where, count)
         return count
+
+    def check_table(self, db):
+        """Check if corresponding table for this model exists in the db and has all necessary
+        columns. Add check_table call in very model method that uses a db.
+        """
+        if not isinstance(db, adapters.GenericAdapter):
+            raise exceptions.AdapterError('Need a database adapter.')
+        if db.url in self._checked_dbs:
+            # this db was already checked
+            return
+        model = self.model
+        logger.debug('Model.check_table: checking db table %s', model)
+        table_name = model._meta.db_name
+        if table_name not in db.get_tables():
+            self._handle_table_missing(db)
+        model_columns = {field.column.name: field.column for field in model._meta.fields.values()}
+        db_columns = db.get_columns(table_name)
+#        logger.debug(pprint.pformat(list(column.str() for column in dbColumns.values())))
+#        logger.debug(pprint.pformat(list(column.str() for column in modelColumns.values())))
+        for column_name, column in model_columns.items():
+            db_column = db_columns.pop(column_name, None)
+            if not db_column:  # model column is not found in the db
+                print('Column in the db not found: %s' % column.str())
+        logger.debug('CREATE TABLE query:\n%s', db.get_create_table_query(model))
+        self._checked_dbs.add(db.url)
 
     def _handle_table_missing(self, db):
         """Default implementation of situation when upon checking there was not found the table

@@ -8,9 +8,6 @@ from decimal import Decimal
 import dbw
 
 
-# dbw.sql_logger.setLevel(dbw.logging.DEBUG)
-
-
 class PostgresqlAdapterTest(unittest.TestCase):
 
     @classmethod
@@ -41,7 +38,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
             ('author_id', int, int),
             ('price', Decimal, Decimal),
             ('publication_date', Date, Date),
-            ('is_favorite', bool, bool),
+            ('is_popular', bool, bool),
         )
 
     def test_adapter(self):
@@ -67,7 +64,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
                                      db_index=True)  # 2 decimal places
             author = dbw.RelatedRecordField(Author, db_index=True)
             publication_date = dbw.DateField()
-            is_favorite = dbw.BooleanField()
+            is_popular = dbw.BooleanField()
 
         db = self.db
         for model in (Author, Book):
@@ -94,7 +91,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
             authors.append(author)
 
         book_data = (
-            (Book.name, 'author', 'price', 'publication_date', 'is_favorite'),
+            (Book.name, 'author', 'price', 'publication_date', 'is_popular'),
             ("Free as in Freedom: Richard Stallman's Crusade for Free Software",
              authors[0], Decimal('9.55'), Date(2002, 3, 8), False),
             ("Hackers: Heroes of the Computer Revolution - 25th Anniversary Edition",
@@ -119,7 +116,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
         field_info = self._get_book_field_info()
         for book_id in range(1, 4):
             db.execute("""
-                SELECT id, name, author_id, price, publication_date, is_favorite
+                SELECT id, name, author_id, price, publication_date, is_popular
                 FROM book
                 WHERE id = %s
             """, (book_id,))
@@ -185,7 +182,7 @@ class PostgresqlAdapterTest(unittest.TestCase):
         self.assertEqual(book.name, new_title)
 
         # Authors count
-        list(db.select(Author.COUNT()).dictresult())
+        list(db.select(Author.count()).dictresult())
         list(db.select(Author.first_name, Author.last_name).dictresult())
 
         # Selecting all fields for book with id=1

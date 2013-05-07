@@ -6,7 +6,6 @@ from decimal import Decimal
 from collections import OrderedDict
 
 import dbw
-from dbw import Nil
 
 
 class ModelAttrInfo():
@@ -86,22 +85,19 @@ class ModelAttr():
         return self
 
 
-class ModelBase(type):
+class ModelMeta(type):
     """Metaclass for all models.
     It gives names to all fields and makes instances for fields for each of the models.
     It has some class methods for models.
     """
     def __new__(cls, name, bases, attrs):
-        NewModel = super().__new__(cls, name, bases, attrs)
 
-        parent_models = [base for base in bases if isinstance(base, ModelBase)]
-        if not parent_models:
-            # If this isn't a subclass of Model, don't do anything special.
-            return NewModel
+        NewModel = super().__new__(cls, name, bases, attrs)
+        parent_models = [base for base in bases if isinstance(base, ModelMeta)]
 
         try:
 
-            logger.debug('Finishing initialization of model `%s`' % dbw.get_object_path(NewModel))
+            dbw.logger.debug('Finishing initialization of model `%r`', NewModel)
 
             model_attrs = OrderedDict()
             for attr_name, attr in inspect.getmembers(NewModel):
@@ -123,30 +119,33 @@ class ModelBase(type):
                 try:
                     attr.__init__(model_attr_info=ModelAttrInfo(NewModel, attr_name))
                 except Exception:
-                    logger.debug('Failed to init a model attribute: %s.%s'
-                                 % (dbw.get_object_path(NewModel), attr_name))
+                    dbw.logger.debug(
+                        'Failed to init a model attribute: %r.%s', NewModel, attr_name)
                     raise
                 setattr(NewModel, attr_name, attr)
 
-            # process _meta at the end, when all fields should have been initialized
+            # process _meta here, when all fields should have been initialized
             if _meta._model_attr_info.model is not None:  # inherited
+                dbw.logger.debug('Model `%r` does not have `_meta` attribute', NewModel)
                 _meta = model_options.ModelOptions()  # override
             _meta.__init__(model_attr_info=ModelAttrInfo(NewModel, '_meta'))
             NewModel._meta = _meta
 
-            # make per model exceptions
-            NewModel.RecordNotFound = type(
-                'RecordNotFound',
-                tuple(parent_model.RecordNotFound
-                      for parent_model in parent_models),
-                {'__module__': NewModel.__module__}
-            )
-            NewModel.MultipleRecordsFound = type(
-                'MultipleRecordsFound',
-                tuple(parent_model.MultipleRecordsFound
-                      for parent_model in parent_models),
-                {'__module__': NewModel.__module__}
-            )
+            if parent_models:
+                # make per model exceptions
+                # exceptions have the same name and are inherited from parent models exceptions
+                NewModel.RecordNotFound = type(
+                    'RecordNotFound',
+                    tuple(parent_model.RecordNotFound
+                          for parent_model in parent_models),
+                    {'__module__': NewModel.__module__}
+                )
+                NewModel.MultipleRecordsFound = type(
+                    'MultipleRecordsFound',
+                    tuple(parent_model.MultipleRecordsFound
+                          for parent_model in parent_models),
+                    {'__module__': NewModel.__module__}
+                )
 
         except Exception as exc:
             raise exceptions.ModelError(str(exc))
@@ -172,11 +171,14 @@ class ModelBase(type):
     def __str__(self):
         return self._meta.db_name
 
+    def __repr__(self):
+        return dbw.get_object_path(self)
 
-from . import model_fields, signals, logger, exceptions, model_options, query_manager, adapters
+
+from . import model_fields, exceptions, model_options, query_manager
 
 
-class Model(metaclass=ModelBase):
+class Model(metaclass=ModelMeta):
     """Base class for all models. Class attributes - the fields.
     Instance attributes - the values for the corresponding model fields.
     """
@@ -219,14 +221,14 @@ class Model(metaclass=ModelBase):
         # make values for fields
         for field_name, field in self._meta.fields.items():
             # is this a field name?
-            field_value = kwargs.pop(field_name, Nil)
-            if field_value is Nil and isinstance(field, model_fields.RelatedRecordField):
+            field_value = kwargs.pop(field_name, dbw.Nil)
+            if field_value is dbw.Nil and isinstance(field, model_fields.RelatedRecordField):
                 # a related record id?
-                field_value = kwargs.pop(field._name, Nil)
-                if field_value is not Nil:
+                field_value = kwargs.pop(field._name, dbw.Nil)
+                if field_value is not dbw.Nil:
                     field_name = field._name
 
-            if field_value is Nil:
+            if field_value is dbw.Nil:
                 field_value = field.default
 
             setattr(self, field_name, field_value)
@@ -272,7 +274,7 @@ class Model(metaclass=ModelBase):
         self.timestamp = DateTime.now()
         values = []  # list of tuples (Field, value)
         for field in model._meta.fields.values():
-            value = Nil
+            value = dbw.Nil
             if isinstance(field, model_fields.RelatedRecordField):
                 value = getattr(self, field._name)
             else:
@@ -308,7 +310,7 @@ class Model(metaclass=ModelBase):
         return '%s(%s)' % (self.__class__.__name__, ', '.join(values))
 
     @classmethod
-    def COUNT(cls):
+    def count(cls):
         """Get COUNT expression for this table.
         """
         return dbw.Expression('_COUNT', None, model=cls)
@@ -335,3 +337,6 @@ class LeftJoin(Join):
     """
     def __init__(self, table, on):
         super().__init__(table, on, 'left')
+
+
+from . import adapters, signals, logger
