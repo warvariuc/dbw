@@ -218,7 +218,7 @@ class GenericAdapter():
                 value = encode_func(value, column)
                 assert isinstance(value, (str, int, Decimal)), \
                     'Encode `%s.%s` function did not return a string, integer or decimal' \
-                    % (self.__class__.__name__, '_encode_' + column.type.upper())
+                    % (dbw.get_object_path(self), '_encode_' + column.type.upper())
                 return str(value)
         return self.escape(value)
 

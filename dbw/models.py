@@ -296,7 +296,7 @@ class Model(metaclass=ModelMeta):
 
         signals.post_save.send(sender=model, record=self, is_new=is_new)
 
-    def __str__(self):
+    def __repr__(self):
         """Human readable presentation of the record.
         """
         values = []
@@ -307,7 +307,7 @@ class Model(metaclass=ModelMeta):
             if isinstance(field_value, (Date, DateTime, Decimal)):
                 field_value = str(field_value)
             values.append("%s= %r" % (field_name, field_value))
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(values))
+        return '%s(%s)' % (dbw.get_object_path(self), ', '.join(values))
 
     @classmethod
     def count(cls):

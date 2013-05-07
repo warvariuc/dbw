@@ -323,7 +323,7 @@ class DateTimeField(ModelField):
         elif not isinstance(value, DateTime) and value is not None:
             raise exceptions.RecordValueError(
                 'Provide a datetime.datetime or a string in format "%Y-%m-%d %H:%M:%S.%f" with '
-                'a valid date-time. Got a `{}`.'.format(value.__class__.__name__))
+                'a valid date-time. Got a `{}`.'.format(dbw.get_object_path(value)))
         record.__dict__[self.name] = value
 
 
