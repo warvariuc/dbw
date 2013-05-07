@@ -53,10 +53,10 @@ class ProxyInit():
                 if model_attr_info:
                     self._model_attr_info = model_attr_info
                 else:
-                    obj._initArgs = args
-                    obj._initKwargs = kwargs
+                    obj._init_args = args
+                    obj._init_kwargs = kwargs
                 if self._model_attr_info.model is not None:
-                    orig_init(self, *self._initArgs, **self._initKwargs)
+                    orig_init(self, *self._init_args, **self._init_kwargs)
 #            return MethodType(__init__, obj)
             # functions are descriptors, to be able to work as bound methods
             return proxy_init.__get__(obj, cls)
@@ -69,7 +69,7 @@ class ModelAttr():
     `__init__` being called only after the model is completely defined.
     Usually `__init__` is called  by the Model metaclass.
     """
-    __creationCounter = 0  # will be used to track the definition order of the attributes in models
+    __creation_ounter = 0  # will be used to track the definition order of the attributes in models
     _model_attr_info = ModelAttrInfo(None, None)  # model attribute information, set by `_init_`
 
     def __new__(cls, *args, **kwargs):
@@ -78,8 +78,8 @@ class ModelAttr():
         """
         # create the object normally
         self = super().__new__(cls)
-        ModelAttr.__creationCounter += 1
-        self._creationOrder = ModelAttr.__creationCounter
+        ModelAttr.__creation_ounter += 1
+        self._creation_order = ModelAttr.__creation_ounter
 #        print('ModelAttrMixin.__new__', cls, repr(self))
         ProxyInit(cls)  # monkey patching `__init__` with our version
         return self
@@ -108,13 +108,13 @@ class ModelMeta(type):
             assert isinstance(_meta, model_options.ModelOptions), \
                 '`_meta` attribute should be instance of ModelOptions'
             # sort by definition order - for the correct recreation order
-            model_attrs = sorted(model_attrs.items(), key=lambda i: i[1]._creationOrder)
+            model_attrs = sorted(model_attrs.items(), key=lambda i: i[1]._creation_order)
 
             for attr_name, attr in model_attrs:
                 if attr._model_attr_info.model:  # inherited field
                     # make its copy for the new model
-                    _attr = attr.__class__(*attr._initArgs, **attr._initKwargs)
-                    _attr._creationOrder = attr._creationOrder
+                    _attr = attr.__class__(*attr._init_args, **attr._init_kwargs)
+                    _attr._creation_order = attr._creation_order
                     attr = _attr
                 try:
                     attr.__init__(model_attr_info=ModelAttrInfo(NewModel, attr_name))
@@ -259,8 +259,8 @@ class Model(metaclass=ModelMeta):
         `record.id` will be set to None.
         """
         db = self._db
-        self.objects.check_table(db)
         model = self.__class__
+        model.objects.check_table(db)
         signals.pre_delete.send(sender=model, record=self)
         db.delete(model, where=(model.id == self.id))
         db.commit()

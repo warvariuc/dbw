@@ -38,7 +38,7 @@ class ModelOptions(models.ModelAttr):
             if isinstance(attr, model_fields.ModelField):
                 _fields[attr_name] = attr
         # sort by creation order
-        self.fields = OrderedDict(sorted(_fields.items(), key=lambda i: i[1]._creationOrder))
+        self.fields = OrderedDict(sorted(_fields.items(), key=lambda i: i[1]._creation_order))
 
         self.ordering = ordering or []  # default order for select when not specified - overriden
 
