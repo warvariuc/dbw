@@ -22,7 +22,6 @@ class ModelOptions(models.ModelAttr):
             class and put abstract=True in the _meta attribute. This model will then not be used to
             create any database table.
         """
-        if __builtins__.get('test'): import ipdb; ipdb.set_trace()
         # TODO: add `proxy` option, similarly to Django?
         if abstract:
             db_name = ''  # doesn't make sense to set it for abstract models

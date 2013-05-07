@@ -3,7 +3,9 @@ import threading
 
 from . import saferef
 
+
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
+
 
 def _make_id(target):
     if hasattr(target, '__func__'):

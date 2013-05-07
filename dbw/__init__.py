@@ -32,7 +32,7 @@ _base_import = __builtins__['__import__']
 __builtins__['__import__'] = __import__
 
 
-import logging, logging.config
+import logging.config
 import importlib
 
 
@@ -42,10 +42,6 @@ LOG_SETTINGS = {
         'detailed': {
             'format': '%(asctime)s [%(levelname)s] %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S',
-        },
-        'email': {
-            'format': 'Timestamp: %(asctime)s\nModule: %(module)s\n' \
-            'Line: %(lineno)d\nMessage: %(message)s',
         },
     },
     'handlers': {
@@ -81,7 +77,7 @@ def get_object_path(obj):
     else:
         suffix = '()'
         obj = obj.__class__
-    module_path = '' if obj.__module__ == 'builtins' else  obj.__module__ + '.'
+    module_path = '' if obj.__module__ == 'builtins' else obj.__module__ + '.'
     return module_path + obj.__name__ + suffix
 
 

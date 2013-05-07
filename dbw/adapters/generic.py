@@ -696,7 +696,7 @@ class GenericAdapter():
         tables are taken from fields and `where` expression;
         """
         rows = self._select(*fields, from_=from_, where=where, orderby=orderby,
-                             limit=limit, distinct=distinct, groupby=groupby, having=having)
+                            limit=limit, distinct=distinct, groupby=groupby, having=having)
         assert isinstance(rows, Rows)
         if get_query:
             return rows.query

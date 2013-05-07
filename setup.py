@@ -21,7 +21,8 @@ longdesc += '\n\n' + open('LICENSE.rst').read()
 v_file = open(os.path.join(os.path.dirname(__file__), 'dbw', '__init__.py')).read()
 version = re.search(r"^__version__ = '(.*?)'$", v_file, re.MULTILINE).group(1)
 
-setuptools.setup(name='dbw',
+setuptools.setup(
+    name='dbw',
     version=version,
     description='DataBase Wrapper: DAL + ORM',
     long_description=longdesc,

@@ -5,7 +5,8 @@ Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).
 """
 
-import weakref, traceback
+import weakref
+import traceback
 
 
 def safeRef(target, onDelete=None):
@@ -23,7 +24,9 @@ def safeRef(target, onDelete=None):
         if target.__self__ is not None:
             # Turn a bound method into a BoundMethodWeakref instance.
             # Keep track of these instances for lookup by disconnect().
-            assert hasattr(target, '__func__'), """safeRef target %r has __self__, but no __func__, don't know how to create reference""" % (target,)
+            assert hasattr(target, '__func__'), (
+                "safeRef target %r has __self__, but no __func__, don't know how to create "
+                "reference" % target)
             reference = get_bound_method_weakref(
                 target=target,
                 onDelete=onDelete
@@ -33,6 +36,7 @@ def safeRef(target, onDelete=None):
         return weakref.ref(target, onDelete)
     else:
         return weakref.ref(target)
+
 
 class BoundMethodWeakref(object):
     """'Safe' and reusable weak references to instance methods
@@ -112,7 +116,7 @@ class BoundMethodWeakref(object):
             methods = self.deletionMethods[:]
             del self.deletionMethods[:]
             try:
-                del self.__class__._allInstances[ self.key ]
+                del self.__class__._allInstances[self.key]
             except KeyError:
                 pass
             for function in methods:
@@ -179,6 +183,7 @@ class BoundMethodWeakref(object):
                 return function.__get__(target)
         return None
 
+
 class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
     """A specialized BoundMethodWeakref, for platforms where instance methods
     are not descriptors.
@@ -210,9 +215,9 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
             collected).  Should take a single argument,
             which will be passed a pointer to this object.
         """
-        assert getattr(target.__self__, target.__name__) == target, \
-               ("method %s isn't available as the attribute %s of %s" %
-                (target, target.__name__, target.__self__))
+        assert getattr(target.__self__, target.__name__) == target, (
+            "method %s isn't available as the attribute %s of %s" %
+            (target, target.__name__, target.__self__))
         super(BoundNonDescriptorMethodWeakref, self).__init__(target, onDelete)
 
     def __call__(self):
@@ -238,6 +243,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
                 # information.
                 return getattr(target, function.__name__)
         return None
+
 
 def get_bound_method_weakref(target, onDelete):
     """Instantiates the appropiate BoundMethodWeakRef, depending on the details of

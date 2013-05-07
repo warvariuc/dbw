@@ -30,7 +30,7 @@ def run_tests(verbosity=1, interactive=False):
         os.environ.setdefault('SQLITE_TEST_DB', os.path.join(BASE_DIR, SQLITE_TEST_DB))
     if MYSQL_TEST_DB:
         os.environ.setdefault('MYSQL_TEST_DB', MYSQL_TEST_DB)
-    
+
     nose_args = sys.argv.copy()
     nose_args.extend(['-v'])
 
