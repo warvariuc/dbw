@@ -339,4 +339,4 @@ class LeftJoin(Join):
         super().__init__(table, on, 'left')
 
 
-from . import adapters, signals, logger
+from . import adapters, signals

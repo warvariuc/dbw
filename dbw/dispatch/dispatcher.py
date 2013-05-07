@@ -14,9 +14,9 @@ def _make_id(target):
 class Signal(object):
     """
     Base class for all signals
-    
+
     Internal attributes:
-    
+
         receivers
             { receriverkey (id) : weakref(receiver) }
     """
@@ -24,7 +24,7 @@ class Signal(object):
     def __init__(self, providing_args=None):
         """
         Create a new signal.
-        
+
         providing_args
             A list of the arguments this signal can pass along in a send() call.
         """
@@ -35,9 +35,9 @@ class Signal(object):
     def connect(self, receiver, sender=None, weak=True, dispatch_uid=None):
         """
         Connect receiver to sender for signal.
-    
+
         Arguments:
-        
+
             receiver
                 A function or an instance method which is to receive signals.
                 Receivers must be hashable objects.
@@ -45,7 +45,7 @@ class Signal(object):
                 If weak is True, then receiver must be weak-referencable (more
                 precisely saferef.safeRef() must be able to create a reference
                 to the receiver).
-        
+
                 Receivers must be able to accept keyword arguments.
 
                 If receivers have a dispatch_uid attribute, the receiver will
@@ -61,7 +61,7 @@ class Signal(object):
                 module will attempt to use weak references to the receiver
                 objects. If this parameter is false, then strong references will
                 be used.
-        
+
             dispatch_uid
                 An identifier used to uniquely identify a particular instance of
                 a receiver. This will usually be a string, though it may be
@@ -114,19 +114,19 @@ class Signal(object):
 
         If weak references are used, disconnect need not be called. The receiver
         will be remove from dispatch automatically.
-    
+
         Arguments:
-        
+
             receiver
                 The registered receiver to disconnect. May be none if
                 dispatch_uid is specified.
-            
+
             sender
                 The registered sender to disconnect
-            
+
             weak
                 The weakref state to disconnect
-            
+
             dispatch_uid
                 the unique identifier of the receiver to disconnect
         """
@@ -154,10 +154,10 @@ class Signal(object):
         receivers called if a raises an error.
 
         Arguments:
-        
+
             sender
                 The sender of the signal Either a specific object or None.
-    
+
             named
                 Named arguments which will be passed to receivers.
 
@@ -177,7 +177,7 @@ class Signal(object):
         Send signal from sender to all connected receivers catching errors.
 
         Arguments:
-        
+
             sender
                 The sender of the signal. Can be any python object (normally one
                 registered with a connect if you actually want something to

@@ -48,19 +48,20 @@ class MysqlAdapter(GenericAdapter):
 
     def get_tables(self):
         """Get list of tables (names) in this DB."""
-        self.execute("SHOW TABLES")
-        return [row[0] for row in self.cursor.fetchall()]
+        cursor = self.execute("SHOW TABLES")
+        return [row[0] for row in cursor.fetchall()]
 
     def get_columns(self, table_name):
-        """Get columns of a table"""
-        self.execute("SELECT column_name, data_type, column_default, is_nullable,"
-                     "       character_maximum_length, numeric_precision, numeric_scale,"
-                     "       column_type, extra, column_comment "
-                     "FROM information_schema.columns "
-                     "WHERE table_schema = '%s' AND table_name = '%s'"
-                     % (self.driver_args['db'], table_name))
+        """Get columns of a table."""
+        cursor = self.execute("""
+            SELECT column_name, data_type, column_default, is_nullable,
+                   character_maximum_length, numeric_precision, numeric_scale,
+                   column_type, extra, column_comment
+            FROM information_schema.columns
+            WHERE table_schema = '%s' AND table_name = '%s'
+        """ % (self.driver_args['db'], table_name))
         columns = {}
-        for row in self.cursor.fetchall():
+        for row in cursor.fetchall():
             type_name = row[1].lower()
             if 'int' in type_name:
                 type_name = 'int'

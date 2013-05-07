@@ -157,10 +157,12 @@ class PostgreSqlAdapter(GenericAdapter):
     def get_tables(self):
         """Get list of tables (names) in this DB.
         """
-        self.execute("SELECT table_name "
-                     "FROM information_schema.tables "
-                     "WHERE table_schema = 'public'")
-        return [row[0] for row in self.cursor.fetchall()]
+        cursor = self.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+        """)
+        return [row[0] for row in cursor.fetchall()]
 
     def get_columns(self, table_name):
         """Get columns of a table
@@ -206,8 +208,8 @@ class PostgreSqlAdapter(GenericAdapter):
         """Overriden to add `RETURNING id`.
         """
         query = self._insert(*fields) + ' RETURNING id'
-        self.execute(query)
-        return self.cursor.fetchone()[0]
+        cursor = self.execute(query)
+        return cursor.fetchone()[0]
 
     def _drop_table(self, table_name):
         """Return query for dropping a table.

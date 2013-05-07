@@ -18,11 +18,11 @@ class PostgresqlAdapterTest(unittest.TestCase):
         cls.db = dbw.connect('postgresql://' + db_url)
 
         # Drops all tables from the test database
-        cls.db.execute("""
+        cursor = cls.db.execute("""
             SELECT table_name FROM information_schema.tables
             WHERE table_schema='public' AND table_type != 'VIEW' AND table_name NOT LIKE 'pg_ts_%%'
         """)
-        for (table_name,) in cls.db.cursor.fetchall():
+        for (table_name,) in cursor.fetchall():
             cls.db.execute('DROP TABLE %s CASCADE' % table_name)
 
     @classmethod
@@ -40,6 +40,13 @@ class PostgresqlAdapterTest(unittest.TestCase):
             ('publication_date', Date, Date),
             ('is_popular', bool, bool),
         )
+
+    def _check_count(self, db, model, count):
+        # direct query to the db
+        cursor = db.execute("SELECT COUNT(*) FROM %s" % model._meta.db_name)
+        self.assertEqual(cursor.fetchone()[0], count)
+        # via model
+        self.assertEqual(db.select(model.count()).values[0][0], count)
 
     def test_adapter(self):
 
@@ -109,18 +116,17 @@ class PostgresqlAdapterTest(unittest.TestCase):
             book = Book.objects.create(db, *data)
             books.append(book)
 
-        db.execute("SELECT COUNT(*) FROM book")
-        raw = db.cursor.fetchall()
-        self.assertEqual(raw[0][0], 5)
+        self._check_count(db, Author, len(author_data) - 1)
+        self._check_count(db, Book, len(book_data) - 1)
 
         field_info = self._get_book_field_info()
         for book_id in range(1, 4):
-            db.execute("""
+            cursor = db.execute("""
                 SELECT id, name, author_id, price, publication_date, is_popular
                 FROM book
                 WHERE id = %s
-            """, (book_id,))
-            raw = db.cursor.fetchall()
+            """, book_id)
+            raw = cursor.fetchall()
             rows = db.select(*Book, where=(Book.id == book_id))
             book = Book.objects.get_one(db, id=book_id)
             for i, (field_name, value_type, db_type) in enumerate(field_info):
@@ -167,23 +173,17 @@ class PostgresqlAdapterTest(unittest.TestCase):
         self.assertEqual(db._queries[-2], last_query)
 
         # there are still 5 books in the db - it was an update
-        db.execute("SELECT COUNT(*) FROM book")
-        raw = db.cursor.fetchall()
-        self.assertEqual(raw[0][0], 5)
+        self._check_count(db, Book, len(book_data) - 1)
 
         # verify that the data was changed
-        db.execute("SELECT name FROM book WHERE id = %s" % book.id)
-        raw = db.cursor.fetchall()
+        cursor = db.execute("SELECT name FROM book WHERE id = %s", book.id)
+        raw = cursor.fetchall()
         self.assertEqual(raw, [(new_title,)])
 
         book = Book.objects.get_one(db, where=(Book.id == book.id))
-        self.assertEqual(db._queries[-5], last_query)
+        self.assertEqual(db._queries[-6], last_query)
         self.assertEqual(book.price, old_price + 1)
         self.assertEqual(book.name, new_title)
-
-        # Authors count
-        list(db.select(Author.count()).dictresult())
-        list(db.select(Author.first_name, Author.last_name).dictresult())
 
         # Selecting all fields for book with id=1
         rows = db.select(
@@ -241,3 +241,9 @@ class PostgresqlAdapterTest(unittest.TestCase):
         rows = db.select(Book.author, count, where=(Book.author != None),
                          groupby=Book.author, having=(count > 1), orderby=[-count, Book.author])
         self.assertEqual(rows.values, [[2, 3]])
+
+        # delete a Book record
+        book.delete()
+        self.assertIsNone(book.id)
+        # Book count
+        self._check_count(db, Book, len(book_data) - 1)

@@ -24,8 +24,7 @@ class GenericAdapter():
         """
         @param url: database location without scheme
         """
-        self.connection = None
-        self.cursor = None
+        self._connection = None
         if url:
             self.connect(url, *args, **kwargs)
 
@@ -36,8 +35,7 @@ class GenericAdapter():
         dbw.logger.debug('Creating adapter for `%s`', self)
         self._queries = []  # [(query_start_time, query_str, query_execution_duration),]
         self.autocommit = autocommit
-        self.connection = self._connect(url, *args, **kwargs)
-        self.cursor = self.connection.cursor()
+        self._connection = self._connect(url, *args, **kwargs)
 
     def _connect(self, url, *args, **kwargs):
         """Connect to the DB. To be overridden in subclasses.
@@ -46,19 +44,21 @@ class GenericAdapter():
         raise NotImplementedError()
 
     def disconnect(self):
-        self.connection.close()
-        self.connection = None
-        self.cursor = None
+        if self._connection:
+            self._connection.close()
+            self._connection = None
 
     def execute(self, query, *args):
         """Execute a query.
+        @return: cursor object
         """
         dbw.sql_logger.debug(query)
-        if not self.cursor:
+        if not self._connection:
             raise dbw.AdapterError('No connection has been set yet.')
+        cursor = self._connection.cursor()  # create a new cursor
         start_time = time.time()
         try:
-            result = self.cursor.execute(query, *args)
+            cursor.execute(query, args)
             if self.autocommit:
                 self.commit()
         except Exception:
@@ -67,13 +67,17 @@ class GenericAdapter():
         finish_time = time.time()
         self._queries.append((start_time, query, finish_time - start_time))
         self._queries = self._queries[-self._MAX_QUERIES:]
-        return result
+        return cursor
 
     def commit(self):
-        self.connection.commit()
+        if not self._connection:
+            raise dbw.AdapterError('No connection has been set yet.')
+        self._connection.commit()
 
     def rollback(self):
-        return self.connection.rollback()
+        if not self._connection:
+            raise dbw.AdapterError('No connection has been set yet.')
+        return self._connection.rollback()
 
     def get_last_query(self):
         return self._queries[-1] if self._queries else (0, '', 0)
@@ -452,9 +456,9 @@ class GenericAdapter():
 #            tables |= self._getExpressionTables(expression.right)
 #        return tables
 
-    def _get_last_insert_id(self):
+    def _get_last_insert_id(self, cursor):
         """Get last insert ID."""
-        return self.cursor.lastrowid
+        return cursor.lastrowid
 
     def _insert(self, *_fields):
         """Create INSERT query.
@@ -489,8 +493,8 @@ class GenericAdapter():
         query = self._insert(*fields)
         if get_query:
             return query
-        self.execute(query)
-        return self._get_last_insert_id()
+        cursor = self.execute(query)
+        return self._get_last_insert_id(cursor)
 
     def _update(self, *fields, where=None, limit=None):
         """UPDATE table_name SET col_name1 = expression1, col_name2 = expression2, ...
@@ -524,8 +528,8 @@ class GenericAdapter():
         query = self._update(*fields, where=where)
         if get_query:
             return query
-        self.execute(query)
-        return self.cursor.rowcount
+        cursor = self.execute(query)
+        return cursor.rowcount
 
     def _delete(self, model, where, limit=None):
         """DELETE FROM table_name [ WHERE expression ] [ LIMIT limit_amount ]"""
@@ -544,8 +548,8 @@ class GenericAdapter():
         query = self._delete(model, where)
         if get_query:
             return query
-        self.execute(query)
-        return self.cursor.rowcount
+        cursor = self.execute(query)
+        return cursor.rowcount
 
     def _select(self, *fields, from_='', where='', orderby='', limit=None,
                 distinct='', groupby='', having=''):

@@ -164,14 +164,15 @@ class SqliteAdapter(GenericAdapter):
 
     def get_tables(self):
         """Get list of tables (names) in this DB."""
-        self.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        return [row[0] for row in self.cursor.fetchall()]
+        cursor = self.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        return [row[0] for row in cursor.fetchall()]
 
     def get_columns(self, table_name):
         """Get columns of a table"""
-        self.execute("PRAGMA table_info('%s')" % table_name)  # name, type, notnull, dflt_value, pk
+        cursor = self.execute("PRAGMA table_info('%s')" % table_name)
+        # name, type, notnull, dflt_value, pk
         columns = {}
-        for row in self.cursor.fetchall():
+        for row in cursor.fetchall():
             dbw.logger.debug('Found table column: %s, %s', table_name, row)
             type_name = row[2].lower()
             # INTEGER PRIMARY KEY fields are auto-generated in sqlite

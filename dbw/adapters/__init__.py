@@ -60,9 +60,9 @@ class Rows():
         """Execute the SELECT query and process results fetched from the DB.
         Decode values to model fields representation.
         """
-        self.db.execute(self.query)
+        cursor = self.db.execute(self.query)
         rows = []
-        for row in self.db.cursor.fetchall():
+        for row in cursor.fetchall():
             new_row = []
             for field_no, field in enumerate(self.fields):
                 value = row[field_no]
