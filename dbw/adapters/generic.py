@@ -155,6 +155,12 @@ class GenericAdapter():
     def _MIN(self, expression):
         return 'MIN(%s)' % self.render(expression)
 
+    def _SUM(self, expression):
+        return 'SUM(%s)' % self.render(expression)
+
+    def _AVG(self, expression):
+        return 'AVG(%s)' % self.render(expression)
+
     def _LOWER(self, expression):
         return 'LOWER(%s)' % self.render(expression)
 

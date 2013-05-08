@@ -108,6 +108,14 @@ class Expression():
         """Get MINimal value expression."""
         return Expression('_MIN', self)
 
+    def sum(self):
+        """Get SUM aggregate on the expression."""
+        return Expression('_SUM', self)
+
+    def average(self):
+        """Get AVG aggregate on the expression."""
+        return Expression('_AVG', self)
+
     def in_(self, *items):
         """The IN clause."""
         return Expression('_IN', self, items)
