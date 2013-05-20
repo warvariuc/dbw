@@ -76,6 +76,12 @@ class TestModels(unittest.TestCase):
                 db_indexes=dbw.DbUnique('last_name', 'first_name'),
             )
 
+        # test that field order is retained
+        self.assertEqual(len(TestModel3), 4)
+        for i, field_name in enumerate(('id', 'timestamp', 'last_name', 'first_name')):
+            self.assertEqual(str(list(TestModel3)[i]), 'test_model3.' + field_name)
+            self.assertEqual(list(TestModel3._meta.fields.values())[i].name, field_name)
+
         # test indexes in _meta
         self.assertIsInstance(TestModel3._meta.db_indexes, list)
         # primary index for id and our compound index

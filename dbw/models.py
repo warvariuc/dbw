@@ -9,7 +9,7 @@ import dbw
 
 
 class ModelAttrInfo():
-    """Information about an attribute of a Model
+    """Information about an attribute of a Model class.
     """
     def __init__(self, model, name):
         """
@@ -27,7 +27,7 @@ class ModelAttrInfo():
 
 class ProxyInit():
     """A descriptor to hook accesss to `__init__` of a Model attribute, which needs postponed
-    initialiaztion only when the model is fully initialized.
+    initialization only when the model is fully initialized.
     """
     def __init__(self, cls):
         """
@@ -39,29 +39,28 @@ class ProxyInit():
 
     def __get__(self, obj, cls):
 
-        if obj is not None:
+        if obj is None:  # called as class attribute
+            return self
 
-            orig_init = self.orig_init
+        orig_init = self.orig_init
 
-            def proxy_init(self, *args, **kwargs):
-                """This will replace `__init__` method of a Model attribute, will remember
-                initialization arguments and will call the original `__init__` when information
-                about the model attribute is passed.
-                """
+        def proxy_init(self, *args, model_attr_info=None, **kwargs):
+            """This will replace `__init__` method of a Model attribute, will remember
+            initialization arguments and will call the original `__init__` when information
+            about the model attribute is passed.
+            """
 #                print('ModelAttrStubMixin.__init__', self.__class__.__name__, args, kwargs)
-                model_attr_info = kwargs.pop('model_attr_info', None)
-                if model_attr_info:
-                    self._model_attr_info = model_attr_info
-                else:
-                    obj._init_args = args
-                    obj._init_kwargs = kwargs
-                if self._model_attr_info.model is not None:
-                    orig_init(self, *self._init_args, **self._init_kwargs)
-#            return MethodType(__init__, obj)
-            # functions are descriptors, to be able to work as bound methods
-            return proxy_init.__get__(obj, cls)
+            if model_attr_info is not None:
+                self._model_attr_info = model_attr_info
+            else:
+                obj._init_args = args
+                obj._init_kwargs = kwargs
+            if self._model_attr_info.model is not None:
+                orig_init(self, *self._init_args, **self._init_kwargs)
 
-        return self
+        # functions are descriptors, to be able to work as bound methods
+        return proxy_init.__get__(obj, cls)
+
 
 
 class ModelAttr():
@@ -73,7 +72,7 @@ class ModelAttr():
     _model_attr_info = ModelAttrInfo(None, None)  # model attribute information, set by `_init_`
 
     def __new__(cls, *args, **kwargs):
-        """Create the object, but prevent calling its `__init__` method, montkey patching it with a
+        """Create the object, but prevent calling its `__init__` method, monkey patching it with a
         stub, remembering the initizalization arguments. The real `__init__` can be called later.
         """
         # create the object normally
@@ -85,7 +84,10 @@ class ModelAttr():
         return self
 
 
-class ModelMeta(type):
+from . import model_fields, exceptions, model_options, query_manager
+
+
+class ModelType(type):
     """Metaclass for all models.
     It gives names to all fields and makes instances for fields for each of the models.
     It has some class methods for models.
@@ -93,7 +95,7 @@ class ModelMeta(type):
     def __new__(cls, name, bases, attrs):
 
         NewModel = super().__new__(cls, name, bases, attrs)
-        parent_models = [base for base in bases if isinstance(base, ModelMeta)]
+        parent_models = [base for base in bases if isinstance(base, ModelType)]
 
         try:
 
@@ -155,9 +157,12 @@ class ModelMeta(type):
     def __getitem__(self, field_name):
         """Get a Model field by name - Model['field_name'].
         """
+        if not isinstance(field_name, str):
+            raise exceptions.ModelError('Pass a field name as key.')
         if field_name in self._meta.fields:
             return getattr(self, field_name)  # to ensure descriptor behavior
-        raise exceptions.ModelFieldError
+        raise exceptions.ModelFieldError('Model `%s` does not have field `%s`.'
+                                         % (dbw.get_object_path(self), field_name))
 
     def __iter__(self):
         """Get Table fields.
@@ -175,10 +180,7 @@ class ModelMeta(type):
         return dbw.get_object_path(self)
 
 
-from . import model_fields, exceptions, model_options, query_manager
-
-
-class Model(metaclass=ModelMeta):
+class Model(metaclass=ModelType):
     """Base class for all models. Class attributes - the fields.
     Instance attributes - the values for the corresponding model fields.
     """

@@ -145,6 +145,9 @@ class FieldExpression(Expression):
     def __call__(self, value):
         return self.left(value)
 
+    def __repr__(self):
+        return '%s: %s' % (dbw.get_object_path(self), self.left)
+
 
 class ModelField(Expression, models.ModelAttr):
     """Abstract model field. It's inherited from Expression just for the sake of autocomplete
@@ -467,7 +470,7 @@ class RelatedRecordField(ModelField):
 #        super()._init_(Column('INT', self, precision = 5, unsigned = True), None, index)
 #
 #    def cast(self, value):
-#        if isinstance(value, (dbw.Model, dbw.ModelMeta)):
+#        if isinstance(value, (dbw.Model, dbw.ModelType)):
 #        # Table.tableIdField == Table -> Table.tableIdField == Table._tableId
 #            return value._tableId
 #        try:

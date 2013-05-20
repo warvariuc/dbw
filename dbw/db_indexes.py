@@ -64,7 +64,7 @@ class DbIndex(models.ModelAttr):
 
 #    def _copy(self, model):
 #        """Create a copy of the index with copy of fields in the index with the given model."""
-#        assert isinstance(model, models.ModelMeta), 'Pass a Model.'
+#        assert isinstance(model, models.ModelType), 'Pass a Model.'
 #        index_fields = [index_field for index_field in self.index_fields]
 #        return Index(index_fields, self.type, self.name, self.method, **self.other)
 

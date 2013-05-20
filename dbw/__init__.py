@@ -99,7 +99,7 @@ def get_object_by_path(object_path, package_path=None):
 def is_model(obj):
     """Check if the argment is a Model instance.
     """
-    return isinstance(obj, models.ModelMeta)
+    return isinstance(obj, models.ModelType)
 
 
 def listify(obj):
@@ -107,7 +107,7 @@ def listify(obj):
     """
     if isinstance(obj, list):
         return obj
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, models.ModelMeta)):
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, models.ModelType)):
         return list(obj)
     return [obj]
 
