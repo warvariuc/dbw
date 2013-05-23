@@ -64,9 +64,9 @@ class ProxyInit():
 
 
 class ModelAttr():
-    """Mixin class for Model attributes, which holds information about initialization arguments,
-    `__init__` being called only after the model is completely defined.
-    Usually `__init__` is called  by the Model metaclass.
+    """Base class for Model attributes, replaces original `__init__` method with a wrapper around
+    it. The wrapper remembers initialization arguments and calls the real `__init__` only after the
+    model is completely defined, e.g. the Model metaclass passes model/attribute info.
     """
     __creation_ounter = 0  # will be used to track the definition order of the attributes in models
     _model_attr_info = ModelAttrInfo(None, None)  # model attribute information, set by `_init_`
