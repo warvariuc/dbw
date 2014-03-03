@@ -8,14 +8,12 @@ import nose
 
 # sudo -u postgres psql
 # CREATE USER test WITH PASSWORD 'test';
-# CREATE DATABASE test;
-# GRANT ALL PRIVILEGES ON DATABASE test TO test;
+# CREATE DATABASE test OWNER test;
 POSTGRESQL_TEST_DB = 'test:test@localhost/test'
 SQLITE_TEST_DB = '/tmp/dbw-test.sqlite'
 MYSQL_TEST_DB = ''
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(BASE_DIR, '..'))
 
 
 def run_tests(verbosity=1, interactive=False):

@@ -2,14 +2,16 @@ __version__ = '0.1.2'
 __author__ = "Victor Varvariuc <victor.varvariuc@gmail.com>"
 
 import sys
+import builtins
 
-PYTHON_REQUIRED_VERSION = '3.3'
-if sys.version < PYTHON_REQUIRED_VERSION:
+
+REQUIRED_PYTHON_VERSION = '3.3'
+if sys.version < REQUIRED_PYTHON_VERSION:
     sys.exit('Python %s or newer required (you are using: %s).'
-             % (PYTHON_REQUIRED_VERSION, sys.version))
+             % (REQUIRED_PYTHON_VERSION, sys.version))
 
 
-def __import__(name, globals=None, locals=None, fromlist=None, level=0):
+def _import(name, globals=None, locals=None, fromlist=None, level=0, _base_import=__import__):
     """A hack to to make names of imported modules to be available in the parent package before
     they are fully imported. If a module is present in sys.modules event if it's not fully
     imported, it should not be a problem.
@@ -28,8 +30,7 @@ def __import__(name, globals=None, locals=None, fromlist=None, level=0):
             setattr(module, attr, sub_module)
     return module
 
-_base_import = __builtins__['__import__']
-__builtins__['__import__'] = __import__
+builtins.__import__ = _import
 
 
 import logging.config
